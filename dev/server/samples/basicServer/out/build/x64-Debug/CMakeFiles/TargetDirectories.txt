@@ -1,0 +1,3 @@
+C:/Users/Tiago/Desktop/vncsdk-1.10.2/samples/basicServer/out/build/x64-Debug/CMakeFiles/basicServer.dir
+C:/Users/Tiago/Desktop/vncsdk-1.10.2/samples/basicServer/out/build/x64-Debug/CMakeFiles/edit_cache.dir
+C:/Users/Tiago/Desktop/vncsdk-1.10.2/samples/basicServer/out/build/x64-Debug/CMakeFiles/rebuild_cache.dir
