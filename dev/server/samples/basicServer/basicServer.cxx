@@ -124,10 +124,18 @@ void showSDKError(const char* errorString);
 bool needWait = false;
 
 HWND g_hwndButton; // Handle to the button
+static HWND hwndEdit, hwndEdit2;
+SOCKET s;
+WSADATA wsa;
+struct sockaddr_in socket_Server;
+char* message;
+unsigned long addr = inet_addr("192.168.1.216");
+unsigned short portShort = htons(12345);
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
     case WM_CREATE: {
+
         // Create a button when the window is created
         HINSTANCE hInstance = GetModuleHandle(NULL);
         g_hwndButton = CreateWindow(
@@ -172,46 +180,42 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             NULL                // no additional data
         );
 
+        hwndEdit = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "192.168.1.216", WS_BORDER | WS_CHILD | WS_VISIBLE | ES_LEFT, 10, 150, 120, 18, hwnd, (HMENU) 4, hInstance, NULL);
+
+        g_hwndButton = CreateWindow(
+            "BUTTON",           // predefined class
+            "Set IP",         // button text
+            WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,  // styles
+            130,                 // x position
+            150,                 // y position
+            50,                 // button width (def: 100)
+            20,                 // button height (def: 30)
+            hwnd,               // parent window
+            (HMENU)5,           // button ID
+            hInstance,          // instance handle
+            NULL                // no additional data
+        );
+
+        hwndEdit2 = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "12345", WS_BORDER | WS_CHILD | WS_VISIBLE | ES_LEFT, 10, 170, 60, 18, hwnd, (HMENU)6, hInstance, NULL);
+
+        g_hwndButton = CreateWindow(
+            "BUTTON",           // predefined class
+            "Set Port",         // button text
+            WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,  // styles
+            70,                 // x position
+            170,                // y position
+            60,                 // button width (def: 100)
+            20,                 // button height (def: 30)
+            hwnd,               // parent window
+            (HMENU)7,           // button ID
+            hInstance,          // instance handle
+            NULL                // no additional data
+        );
+
 
         break;
     }
     case WM_COMMAND: {
-
-        //printf("Inicio da Criacao do socket\n");      // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ Socket START @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
-        WSADATA wsa;
-        SOCKET s;
-        struct sockaddr_in socket_Server;
-        char* message;
-
-        printf("\nInitialising Winsock...");
-        if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
-        {
-            printf("Failed. Error Code : %d", WSAGetLastError());
-            return 1;
-        }
-        printf("Initialised.");
-
-        if ((s = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET)
-        {
-            printf("Could not create socket : %d", WSAGetLastError());
-        }
-        printf("Socket created.\n");
-
-        socket_Server.sin_addr.s_addr = inet_addr("192.168.1.216");
-        socket_Server.sin_family = AF_INET;
-        socket_Server.sin_port = htons(12345);
-
-        //Connect to remote server
-        if (connect(s, (struct sockaddr*)&socket_Server, sizeof(socket_Server)) < 0)
-        {
-            puts("connect error");
-            return 1;
-        }
-        puts("Connected");
-
-        // printf("Final da Criacao do Socket.\n");     // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ Socket END @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-        // 
         // Começa agora código dos casos da escolha dos butões com a parte de enviar mensagens via socket.
 
         // Handle button click event
@@ -219,6 +223,37 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             puts("Button 1 clicked!");
             // Button with ID 1 was clicked
             // Handle button click here
+
+            //printf("Inicio da Criacao do socket\n");      // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ Socket START @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+            printf("\nInitialising Winsock...");
+            if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
+            {
+                printf("Failed. Error Code : %d", WSAGetLastError());
+                return 1;
+            }
+            printf("Initialised.");
+
+            if ((s = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET)
+            {
+                printf("Could not create socket : %d", WSAGetLastError());
+            }
+            printf("Socket created.\n");
+
+            socket_Server.sin_addr.s_addr = addr;
+            socket_Server.sin_family = AF_INET;
+            socket_Server.sin_port = portShort;
+
+            //Connect to remote server
+            if (connect(s, (struct sockaddr*)&socket_Server, sizeof(socket_Server)) < 0)
+            {
+                puts("connect error");
+                return 1;
+            }
+            puts("Connected");
+
+            // printf("Final da Criacao do Socket.\n");     // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ Socket END @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+           
             // 
             //Send some data
             message = "procedure1";
@@ -227,14 +262,44 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
                 puts("Send failed");
                 return 1;
             }
-            puts("Data Send\n");
+            puts("Data Sent.");
         }
 
         if (LOWORD(wParam) == 2) {
             puts("Button 2 clicked!");
             // Button with ID 2 was clicked
             // Handle button click here
-            // 
+            
+            //printf("Inicio da Criacao do socket\n");      // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ Socket START @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+            printf("\nInitialising Winsock...");
+            if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
+            {
+                printf("Failed. Error Code : %d", WSAGetLastError());
+                return 1;
+            }
+            printf("Initialised.");
+
+            if ((s = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET)
+            {
+                printf("Could not create socket : %d", WSAGetLastError());
+            }
+            printf("Socket created.\n");
+
+            socket_Server.sin_addr.s_addr = addr;
+            socket_Server.sin_family = AF_INET;
+            socket_Server.sin_port = portShort;
+
+            //Connect to remote server
+            if (connect(s, (struct sockaddr*)&socket_Server, sizeof(socket_Server)) < 0)
+            {
+                puts("connect error");
+                return 1;
+            }
+            puts("Connected");
+
+            // printf("Final da Criacao do Socket.\n");     // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ Socket END @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
             //Send some data
             message = "procedure2";
             if (send(s, message, strlen(message), 0) < 0)
@@ -242,14 +307,45 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
                 puts("Send failed");
                 return 1;
             }
-            puts("Data Send\n");
+            puts("Data Sent");
         }
 
         if (LOWORD(wParam) == 3) {
             puts("Button 3 clicked!");
             // Button with ID 3 was clicked
             // Handle button click here
-            // 
+
+            //printf("Inicio da Criacao do socket\n");      // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ Socket START @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+            printf("\nInitialising Winsock...");
+            if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
+            {
+                printf("Failed. Error Code : %d", WSAGetLastError());
+                return 1;
+            }
+            printf("Initialised.");
+
+            if ((s = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET)
+            {
+                printf("Could not create socket : %d", WSAGetLastError());
+            }
+            printf("Socket created.\n");
+
+            socket_Server.sin_addr.s_addr = addr;
+            socket_Server.sin_family = AF_INET;
+            socket_Server.sin_port = portShort;
+
+
+            //Connect to remote server
+            if (connect(s, (struct sockaddr*)&socket_Server, sizeof(socket_Server)) < 0)
+            {
+                puts("connect error");
+                return 1;
+            }
+            puts("Connected");
+
+            // printf("Final da Criacao do Socket.\n");     // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ Socket END @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
             //Send some data
             message = "procedure3";
             if (send(s, message, strlen(message), 0) < 0)
@@ -257,15 +353,62 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
                 puts("Send failed");
                 return 1;
             }
-            puts("Data Send\n");
+            puts("Data Sent.");
         }
 
-        closesocket(s);
+        if (LOWORD(wParam) == 5){
+            int len = GetWindowTextLengthW(hwndEdit) + 1;
+            wchar_t* text = new wchar_t[len];
+
+            GetWindowTextW(hwndEdit, text, len);
+
+            char str[20];
+            if (wcstombs(str, text, 20) == (size_t)-1) {
+                std::cerr << "Error converting wide char to multibyte" << std::endl;
+                return EXIT_FAILURE;
+            }
+
+            // Print narrow character string (for debugging)
+            //std::cout << "Narrow char string: " << str << std::endl;
+
+            // Convert narrow character string to network byte order
+            addr = inet_addr(str);
+            if (addr == INADDR_NONE) {
+                std::cerr << "Invalid IP address" << std::endl;
+                return EXIT_FAILURE;
+            }
+            puts("IP changed!");
+        }
+
+        if (LOWORD(wParam) == 7) {
+            // Example wide character string representing the port number
+            int len = GetWindowTextLengthW(hwndEdit) + 1;
+            wchar_t* wport = new wchar_t[len];
+
+            GetWindowTextW(hwndEdit2, wport, len);
+
+            // Convert wide character string to integer
+            wchar_t* endPtr;
+            unsigned long port = wcstoul(wport, &endPtr, 10); // Base 10
+
+            // Check for conversion errors
+            if (*endPtr != L'\0') {
+                std::cerr << "Error converting wide char to integer" << std::endl;
+                return EXIT_FAILURE;
+            }
+
+            // Convert port number to network byte order (big-endian)
+            portShort = htons(static_cast<unsigned short>(port));
+
+            puts("Port changed!");
+        }
+
         break;
     }
     case WM_DESTROY: {
         PostQuitMessage(0);
         WSACleanup();
+        closesocket(s);
         break;
     }
     default:
