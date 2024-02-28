@@ -22,6 +22,10 @@ print("_________________________________________________________________________
 SERVER_IP = '20.90.179.130'  # Public server. Change this to the external IP of the server
 #SERVER_IP = '188.37.225.70'  # My server. Change this to the external IP of the server
 
+FONTE = 'Ambulance'
+DESTINO = 'Medic'
+
+
 SERVER_PORT = 9001
 BUFMAX = 512
 running = True
@@ -291,12 +295,14 @@ def connect():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((SERVER_IP, SERVER_PORT))
 
-    source_name = str(input("enter source name :"))
+    #source_name = str(input("enter source name :"))
+    source_name = FONTE
     print(f"hello {source_name}")
     print(f"message length = {len((source_name + (' ' * (512 - len(source_name)))).encode())}")
     s.send((source_name + (' ' * (512 - len(source_name)))).encode())
 
-    destination_name = str(input("enter destination name :"))
+    #destination_name = str(input("enter destination name :"))
+    destination_name = DESTINO
     s.send((destination_name + (' ' * (512 - len(destination_name)))).encode())
     sleep(2)
     val = s.recv(2)
