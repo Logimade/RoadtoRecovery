@@ -22,8 +22,8 @@ print("_________________________________________________________________________
 SERVER_IP = '20.90.179.130'  # Public server. Change this to the external IP of the server
 #SERVER_IP = '188.37.225.70'  # My server. Change this to the external IP of the server
 
-FONTE = 'Ambulance'
-DESTINO = 'Medic'
+FONTE = 'Medic'
+DESTINO = 'Ambulance'
 
 
 SERVER_PORT = 9001
