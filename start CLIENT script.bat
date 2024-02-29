@@ -1,7 +1,9 @@
 @ECHO OFF
 
-START "pythonclient.exe" "C:\Users\HCI4H\Documents\GitHub\RoadtoRecovery\VoiceChat\Medic VoiceChat\pythonclient.exe"
+START "%~dp0" "VoiceChat\Medic VoiceChat\pythonclient.exe"
 
-START "basicViewerWin.exe" "C:\Users\HCI4H\Documents\GitHub\RoadtoRecovery\VNC Client App\basicViewerWin.exe"
+TIMEOUT /T 2 /NOBREAK
+
+START "%~dp0" "VNC Client App\basicViewerWin.exe"
 
 EXIT
