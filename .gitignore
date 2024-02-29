@@ -1,11 +1,11 @@
 
 VNC Server App/fileStore.txt
 
-dev/server/samples/basicServer/.vs/
-dev/server/samples/basicServer/out/
+dev/vnc app/samples/basicServer/.vs/
+dev/vnc app/samples/basicServer/out/
 
-dev/client/samples/basicServer/.vs/
-dev/client/samples/basicServer/out/
+dev/vnc app/samples/basicServer/.vs/
+dev/vnc app/samples/basicServer/out/
 
 dev/VoiceChat/dist/
 dev/VoiceChat/build/
