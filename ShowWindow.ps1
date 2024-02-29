@@ -17,7 +17,7 @@ if ([string]::IsNullOrEmpty($windowHandle)) {
 '@
         $type = Add-Type -MemberDefinition $pinvokeCode -Name Win32Utils -Namespace Win32Functions -PassThru
 
-	$type::ShowWindowAsync($windowHandle, 6)# 6 = Minimize
+	$type::ShowWindowAsync($windowHandle, 6) # 6 = Minimize
         $type::ShowWindowAsync($windowHandle, 1) # 1 = Show 
         Write-Host "Window showed successfully."
     } catch {
