@@ -1,3 +1,0 @@
-2024-02-29T14:10:34.986Z BASIC [InitSDK] VNC SDK Version 1.10.2+51784 (compiled against 1.10.2+51784, expires on 2024-06-30)
-2024-02-29T14:10:39.911Z BASIC [ViewerSDK] Viewer 00000261BC35F430 connected
-2024-02-29T14:11:29.161Z BASIC [ViewerSDK] Viewer 00000261BC35F430 disconnected, reason ServerShutdown
