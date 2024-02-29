@@ -2,6 +2,9 @@
 VNC Server App/fileStore.txt
 VNC Client App/logfile.txt
 
+logfile.txt
+fileStore.txt
+
 dev/vnc app/samples/basicServer/.vs/
 dev/vnc app/samples/basicServer/out/
 
