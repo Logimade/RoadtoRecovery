@@ -441,8 +441,8 @@ int main(int argc, const char** argv)
         "MyWindowClass",    // class name
         "My Window",        // window caption
         WS_OVERLAPPEDWINDOW, // window style
-        CW_USEDEFAULT,      // initial x position
-        CW_USEDEFAULT,      // initial y position
+        0,      // initial x position
+        0,      // initial y position
         400,                // initial width
         300,                // initial height
         NULL,               // parent window
