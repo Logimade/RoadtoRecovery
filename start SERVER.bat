@@ -25,6 +25,20 @@ set "windowTitle=AmbulancePOV"
 rem Execute the PowerShell script to minimize the window
 powershell -ExecutionPolicy Bypass -File "ShowWindow.ps1" -ProcessName "%processName%" -WindowTitle "%windowTitle%"
 
-endlocal
+
+:WAIT_LOOP
+rem Check if scrcpy process is still running
+tasklist /FI "IMAGENAME eq scrcpy.exe" 2>NUL | find /I /N "scrcpy.exe">NUL
+if "%ERRORLEVEL%"=="0" (
+    rem Process is still running, wait and check again
+    TIMEOUT /T 1 /NOBREAK
+    GOTO WAIT_LOOP
+)
+
+:endlocal
+
+REM Once PowerShell script is executed and scrcpy window is closed, close the remaining windows
+taskkill /FI "WINDOWTITLE eq Ambulance Voice Chat"
+taskkill /FI "WINDOWTITLE eq VNC Server"
 
 EXIT
