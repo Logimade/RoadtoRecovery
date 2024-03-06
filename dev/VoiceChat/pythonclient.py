@@ -1,3 +1,4 @@
+import errno
 from threading import Thread, Lock, Condition
 import socket
 import sounddevice as sd
@@ -7,6 +8,8 @@ import numpy as np
 from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
 from socket import timeout
+import signal
+import sys
 
 MAX_BYTES_SEND = 512  # Must be less than 1024 because of networking limits
 MAX_HEADER_LEN = 20  # allocates 20 bytes to store length of data that is transmitted
@@ -22,8 +25,8 @@ print("_________________________________________________________________________
 SERVER_IP = '20.90.179.130'  # Public server. Change this to the external IP of the server
 #SERVER_IP = '188.37.225.70'  # My server. Change this to the external IP of the server
 
-FONTE = 'Medic'
-DESTINO = 'Ambulance'
+FONTE = 'Ambulance'
+DESTINO = 'Medic'
 
 
 SERVER_PORT = 9001
@@ -43,6 +46,7 @@ iv = get_random_bytes(16)
 cipher = AES.new(key, AES.MODE_CBC, iv)
 
 
+
 """
 def get_iv():
     return get_random_bytes(16)
@@ -60,6 +64,23 @@ def encrypt(data_string):
     d = (d + (' ' * (len(d) % 16)).encode())
     return cipher.encrypt(d)
 """
+
+def signal_handler(sig, frame):
+    # Ctrl+c pressed!
+    print('Logging '+FONTE+" out...")
+
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect((SERVER_IP, SERVER_PORT))
+
+    s.send((DESTINO + (' ' * (512 - len(DESTINO)))).encode())
+    s.send((FONTE + (' ' * (512 - len(FONTE)))).encode())
+
+    global running
+    running = False
+    sdstream.stop()
+    s.close()
+
+    sys.exit(0)
 
 # Sender function in your client code
 def split_send_bytes(s, inp):
@@ -271,8 +292,9 @@ def receive_play_thread(serversocket):
     play_thread.join()
     return
 
-
 def main():
+    signal.signal(signal.SIGINT, signal_handler)
+
     serversocket = connect()
     global running
     t_thread = Thread(target=record_transmit_thread, args=(serversocket,))
@@ -292,6 +314,7 @@ def connect():
     global SERVER_IP
     global SERVER_PORT
     global destination_name
+
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((SERVER_IP, SERVER_PORT))
 
@@ -305,7 +328,28 @@ def connect():
     destination_name = DESTINO
     s.send((destination_name + (' ' * (512 - len(destination_name)))).encode())
     sleep(2)
-    val = s.recv(2)
+
+    # Set the socket to non-blocking mode
+    s.setblocking(False)
+
+    while True:
+        try:
+            # Attempt to receive data from the socket
+            val = s.recv(2)
+            if val:
+                # Process the received data
+                print("Received:", val.decode('utf-8'))
+                break
+        except socket.error as e:
+            # Handle socket errors
+            if e.errno == errno.EWOULDBLOCK:
+                # No data available, continue waiting
+                continue
+            else:
+                # Handle other socket errors
+                print("Socket error:", e)
+                break
+
     if val.decode() != 'go':
         raise TypeError
     # returns socket fd
