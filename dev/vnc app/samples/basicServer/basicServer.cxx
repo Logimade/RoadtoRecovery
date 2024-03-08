@@ -40,6 +40,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma comment(lib,"ws2_32.lib") //Winsock Library
 
 #include <vnc/Vnc.h>
+#include <thread>
 
 /*
  * basicServer sample
@@ -405,6 +406,18 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 
         break;
     }
+    case WM_PAINT:
+    {
+        // Handle the WM_PAINT message to perform any necessary redrawing operations
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(hwnd, &ps);
+        // Use the device context (hdc) to redraw the window's client area
+        // Draw the background and any other content as needed
+        FillRect(hdc, &ps.rcPaint, (HBRUSH)(COLOR_WINDOW + 1)); // Example: Fill background with default window color
+        // Draw other content or controls here
+        EndPaint(hwnd, &ps);
+        break;
+    }
     case WM_DESTROY: {
         PostQuitMessage(0);
         WSACleanup();
@@ -417,12 +430,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
     return 0;
 }
 
-/*
- * Server main function
- */
-int main(int argc, const char** argv)
-{
-    
+// Function to create the window and run its message loop
+int createWindowAndMessageLoop() {
     //printf("Inicio da criacao do butao.\n");    // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ Início da Interface gráfica @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
     HINSTANCE hInstance = GetModuleHandle(NULL);
@@ -461,7 +470,23 @@ int main(int argc, const char** argv)
 
 
     //printf("Final da Criacao do Butao.\n");     // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ Fim da Interface gráfica @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-   
+
+
+    // Message loop
+    MSG msg;
+    while (GetMessage(&msg, NULL, 0, 0)) {
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
+}
+
+/*
+ * Server main function
+ */
+int main(int argc, const char** argv)
+{
+  // Create a thread to handle window creation and message loop
+  std::thread windowThread(createWindowAndMessageLoop);
 
   int exitCode = 1;
 
@@ -540,6 +565,10 @@ int main(int argc, const char** argv)
   
   /* Shutdown the SDK */
   vnc_shutdown();
+
+  // Wait for the window thread to finish
+  windowThread.join();
+
   return exitCode;
 }
 
