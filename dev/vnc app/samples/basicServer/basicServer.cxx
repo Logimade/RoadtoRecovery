@@ -129,7 +129,7 @@ SOCKET s;
 WSADATA wsa;
 struct sockaddr_in socket_Server;
 char* message;
-unsigned long addr = inet_addr("192.168.1.216");
+unsigned long addr = inet_addr("192.168.1.222");
 unsigned short portShort = htons(12345);
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
@@ -180,7 +180,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             NULL                // no additional data
         );
 
-        hwndEdit = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "192.168.1.216", WS_BORDER | WS_CHILD | WS_VISIBLE | ES_LEFT, 10, 150, 120, 18, hwnd, (HMENU) 4, hInstance, NULL);
+        hwndEdit = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "192.168.1.222", WS_BORDER | WS_CHILD | WS_VISIBLE | ES_LEFT, 10, 150, 120, 18, hwnd, (HMENU) 4, hInstance, NULL);
 
         g_hwndButton = CreateWindow(
             "BUTTON",           // predefined class
