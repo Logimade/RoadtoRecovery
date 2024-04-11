@@ -20,10 +20,10 @@ print("_________________________________________________________________________
 # socket connect to the server
 
 
-SERVER_IP = '20.90.179.130'  # Change this to the external IP of the server
+SERVER_IP = '34.118.67.46'  # Change this to the external IP of the server
 
-FONTE = 'Medic'
-DESTINO = 'Ambulance'
+FONTE = 'Ambulance'
+DESTINO = 'Medic'
 
 SERVER_PORT = 9001
 running = True
