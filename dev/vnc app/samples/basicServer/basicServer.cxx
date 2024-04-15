@@ -257,7 +257,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
            
             // 
             //Send some data
-            message = "procedure1";
+            message = "P: procedure1";
             if (send(s, message, strlen(message), 0) < 0)
             {
                 puts("Send failed");
@@ -302,7 +302,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             // printf("Final da Criacao do Socket.\n");     // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ Socket END @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
             //Send some data
-            message = "procedure2";
+            message = "P: procedure2";
             if (send(s, message, strlen(message), 0) < 0)
             {
                 puts("Send failed");
@@ -348,7 +348,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             // printf("Final da Criacao do Socket.\n");     // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ Socket END @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
             //Send some data
-            message = "procedure3";
+            message = "P: procedure3";
             if (send(s, message, strlen(message), 0) < 0)
             {
                 puts("Send failed");
