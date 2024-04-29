@@ -7,6 +7,7 @@ from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
 from socket import timeout
 from Crypto.Util.Padding import pad, unpad
+import re
 
 MAX_BYTES_SEND = 512  # Must be less than 1024 because of networking limits
 MAX_HEADER_LEN = 20  # allocates 20 bytes to store length of data that is transmitted
@@ -20,10 +21,29 @@ print("_________________________________________________________________________
 # socket connect to the server
 
 
-SERVER_IP = '34.118.67.46'  # Change this to the external IP of the server
+#SERVER_IP = '34.118.67.46'  # Change this to the external IP of the server
 
-FONTE = 'Ambulance'
-DESTINO = 'Medic'
+file_path = "../VoiceChat Server IP.txt"
+ip_default = "34.118.67.46"
+ip = 0
+
+try:
+    with open(file_path, 'r') as file:
+        o = file.read()
+        ip = re.search( r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}", o )
+except FileNotFoundError:
+    with open(file_path, 'w') as file:
+        file.write(ip_default)
+
+if ip:
+    SERVER_IP = ip.group()
+else:
+    SERVER_IP = ip_default
+
+print("SERVER_IP:"+str(SERVER_IP))
+
+FONTE = 'Medic'
+DESTINO = 'Ambulance'
 
 SERVER_PORT = 9001
 running = True
