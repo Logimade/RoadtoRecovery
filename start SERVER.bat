@@ -2,9 +2,9 @@
 
 START /min "Ambulance Voice Chat" "%~dp0VoiceChat\Ambulance VoiceChat\pythonclient.exe"
 
-START "VNC Server" "%~dp0VNC Server App\basicServer.exe"
-
 START "scrcpy" "%~dp0scrcpy-win64-v2.1.1/scrcpy" --crop 1730:974:1934:450 -d --window-title AmbulancePOV
+
+START "VNC Server" "%~dp0VNC Server App\R2R Ambulance.exe"
 
 TIMEOUT /T 1 /NOBREAK
 
