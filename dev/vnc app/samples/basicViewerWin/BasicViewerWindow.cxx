@@ -141,7 +141,7 @@ BasicViewerWindow::BasicViewerWindow(vnc_Viewer* viewer_)
   int initialHeight = vnc_Viewer_getViewerFbHeight(viewer);
   RECT rect = {0, 0, initialWidth, initialHeight};
   hwnd = CreateWindowEx(
-    0, wc.lpszClassName, _T("basicViewer"),
+    0, wc.lpszClassName, _T("Logimade - Road to Recovery - Medic - V0.1"),
     WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, rect.left, rect.top,
     rect.right - rect.left, rect.bottom - rect.top, 0, 0,
     GetModuleHandle(0), this);
