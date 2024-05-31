@@ -74,6 +74,26 @@ static const char* directConnectivityAddOnCode = ""; /*hhP4WfC4Zu / nlQ3xGFaVtcI
 #define HOST_ADDRESS ""
 #define IP_PORT 0
 
+
+   // Function prototypes for login/register functions
+LRESULT CALLBACK LoginRegisterWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+void RegisterUser(const char* username, const char* password);
+int LoginUser(const char* username, const char* password);
+
+#define ID_EDIT_USERNAME 1
+#define ID_EDIT_PASSWORD 2
+#define ID_BUTTON_REGISTER 3
+#define ID_BUTTON_LOGIN 4
+
+typedef struct {
+    char username[30];
+    char password[30];
+} User;
+
+bool validLogin = false;
+
+
+
 /* The value of this flag is set automatically according to the user-supplied
    command line arguments and macro definitions above. Cloud connectivity is
    presumed by default here. */
@@ -96,6 +116,36 @@ bool makeDirectUdpConnection(const char* hostAddress, int port,
                              vnc_Viewer* viewer);
 void runEventLoop(vnc_Viewer* viewer);
 
+
+// Callback function for requesting user credentials
+void requestUserCredentials(void* userData, vnc_Viewer* viewer, vnc_bool_t needUser, vnc_bool_t needPasswd) {
+    // Cast userData to the appropriate type if needed
+    // This data can be passed to the callback when setting it up
+
+    // Example prompt for username and/or password
+    std::string username, password;
+    if (needUser) {
+        //std::cout << "Enter username: ";
+        username = "";
+        //std::cin >> username;
+        // Example: Send username to server
+    }
+    if (needPasswd) {
+        //std::cout << "Enter password: ";
+        password = "";
+        //std::cin >> password;
+        // Example: Send password to server
+    }
+
+    // Example: Send the authentication response to the server
+    vnc_status_t status = vnc_Viewer_sendAuthenticationResponse(viewer, vnc_true, username.c_str(), password.c_str());
+    if (status != vnc_success) {
+        std::cerr << "Failed to send authentication response: " << vnc_getLastError() << std::endl;
+        // Handle error
+    }
+}
+
+
 /*
  * main function - validates cloud addresses, initializes the SDK and the
  * viewer, creates connection handler
@@ -103,6 +153,59 @@ void runEventLoop(vnc_Viewer* viewer);
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
   int exitCode = 1;
+
+  WNDCLASSEX wc;
+  wc.cbSize = sizeof(WNDCLASSEX);
+  wc.style = 0;
+  wc.lpfnWndProc = LoginRegisterWindowProc;
+  wc.cbClsExtra = 0;
+  wc.cbWndExtra = 0;
+  wc.hInstance = hInstance;
+  wc.hIcon = NULL;
+  wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+  wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+  wc.lpszMenuName = NULL;
+  wc.lpszClassName = "LoginRegisterWindowClass";
+  wc.hIconSm = NULL;
+
+  if (!RegisterClassEx(&wc))
+  {
+      // Handle registration failure
+      MessageBox(NULL, "Window class registration failed!", "Error", MB_ICONERROR);
+      return 1;
+  }
+
+  // Create the login/register window
+  HWND hwnd = CreateWindowEx(0, "LoginRegisterWindowClass", "Login/Register", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 300, 200, NULL, NULL, hInstance, NULL);
+
+  if (!hwnd)
+  {
+      DWORD dwError = GetLastError();
+      char errorMessage[256];
+      sprintf(errorMessage, "Window creation failed with error code: %lu", dwError);
+      MessageBox(NULL, errorMessage, "Error", MB_ICONERROR);
+      return 1;
+  }
+
+  // Display the window
+  ShowWindow(hwnd, SW_SHOW);
+  UpdateWindow(hwnd);
+
+  // Message loop
+  MSG msg;
+  while (GetMessage(&msg, NULL, 0, 0))
+  {
+      TranslateMessage(&msg);
+      DispatchMessage(&msg);
+  }
+
+  //return msg.wParam;
+  
+  if (!validLogin) 
+  {
+      return 1;
+  }
+
 
   /* Parameter initialisation */
   const char* localCloudAddress = LOCAL_CLOUD_ADDRESS;
@@ -146,6 +249,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     }
     else {
       win = new BasicViewerWindow(viewer);
+
+      // Handle the authentication process
+      vnc_Viewer_AuthenticationCallback authCallback;
+      authCallback.requestUserCredentials = &requestUserCredentials;
+      vnc_Viewer_setAuthenticationCallback(viewer, &authCallback, NULL);
+
 
       /* Make a connection to the server */
        if (usingCloud) {
@@ -370,4 +479,84 @@ void showSDKError(const char* errorString)
 {
   std::cerr << errorString << ": " << vnc_getLastError() << std::endl;
   MessageBox(0, errorString, "Error", MB_OK);
+}
+
+
+void RegisterUser(const char* username, const char* password) {
+    User user;
+    strcpy(user.username, username);
+    strcpy(user.password, password);
+
+    FILE* file = fopen("users.dat", "ab");
+    if (file != NULL) {
+        fwrite(&user, sizeof(User), 1, file);
+        fclose(file);
+    }
+}
+
+int LoginUser(const char* username, const char* password) {
+    User user;
+    FILE* file = fopen("users.dat", "rb");
+    if (file != NULL) {
+        while (fread(&user, sizeof(User), 1, file)) {
+            if (strcmp(user.username, username) == 0 && strcmp(user.password, password) == 0) {
+                fclose(file);
+                return 1;
+            }
+        }
+        fclose(file);
+    }
+    return 0;
+}
+
+LRESULT CALLBACK LoginRegisterWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+    static HWND hEditUsername, hEditPassword, hButtonRegister, hButtonLogin;
+
+    switch (uMsg) {
+    case WM_CREATE:
+        CreateWindow("STATIC", "Username:", WS_VISIBLE | WS_CHILD, 20, 20, 80, 20, hwnd, NULL, NULL, NULL);
+        hEditUsername = CreateWindow("EDIT", "", WS_VISIBLE | WS_CHILD | WS_BORDER, 100, 20, 150, 20, hwnd, (HMENU)ID_EDIT_USERNAME, NULL, NULL);
+
+        CreateWindow("STATIC", "Password:", WS_VISIBLE | WS_CHILD, 20, 60, 80, 20, hwnd, NULL, NULL, NULL);
+        hEditPassword = CreateWindow("EDIT", "", WS_VISIBLE | WS_CHILD | WS_BORDER | ES_PASSWORD, 100, 60, 150, 20, hwnd, (HMENU)ID_EDIT_PASSWORD, NULL, NULL);
+
+        hButtonRegister = CreateWindow("BUTTON", "Register", WS_VISIBLE | WS_CHILD, 50, 100, 80, 30, hwnd, (HMENU)ID_BUTTON_REGISTER, NULL, NULL);
+        hButtonLogin = CreateWindow("BUTTON", "Login", WS_VISIBLE | WS_CHILD, 150, 100, 80, 30, hwnd, (HMENU)ID_BUTTON_LOGIN, NULL, NULL);
+        break;
+
+    case WM_COMMAND:
+        if (LOWORD(wParam) == ID_BUTTON_REGISTER) {
+            char username[30];
+            char password[30];
+            GetWindowText(hEditUsername, username, 30);
+            GetWindowText(hEditPassword, password, 30);
+            RegisterUser(username, password);
+            MessageBox(hwnd, "Registration successful!", "Info", MB_OK);
+        }
+        else if (LOWORD(wParam) == ID_BUTTON_LOGIN) {
+            char username[30];
+            char password[30];
+            GetWindowText(hEditUsername, username, 30);
+            GetWindowText(hEditPassword, password, 30);
+            if (LoginUser(username, password)) {
+                MessageBox(hwnd, "Login successful!", "Info", MB_OK);
+                validLogin = true;
+                //PostQuitMessage(0);  // Close the login window
+                DestroyWindow(hwnd);
+            }
+            else {
+                MessageBox(hwnd, "Invalid username or password.", "Error", MB_OK);
+                validLogin = false;
+            }
+        }
+        break;
+
+    case WM_DESTROY:
+        PostQuitMessage(0);
+        break;
+
+    default:
+        return DefWindowProc(hwnd, uMsg, wParam, lParam);
+    }
+    return 0;
 }
