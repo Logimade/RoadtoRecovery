@@ -77,8 +77,9 @@ static const char* directConnectivityAddOnCode = ""; /*hhP4WfC4Zu / nlQ3xGFaVtcI
 
    // Function prototypes for login/register functions
 LRESULT CALLBACK LoginRegisterWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-void RegisterUser(const char* username, const char* password);
+int RegisterUser(const char* username, const char* password);
 int LoginUser(const char* username, const char* password);
+char* trimwhitespace(char* str);
 
 #define ID_EDIT_USERNAME 1
 #define ID_EDIT_PASSWORD 2
@@ -92,6 +93,9 @@ typedef struct {
 
 bool validLogin = false;
 
+char CURL_IP[18] = "localhost";
+char CURL_PORT[6] = "8000";
+char CURL_CONTENT_TYPE[30] = "application/json";
 
 
 /* The value of this flag is set automatically according to the user-supplied
@@ -482,16 +486,59 @@ void showSDKError(const char* errorString)
 }
 
 
-void RegisterUser(const char* username, const char* password) {
+int RegisterUser(const char* username, const char* password) {
+    
     User user;
     strcpy(user.username, username);
     strcpy(user.password, password);
 
+    // Command to execute
+    char cmd[254];
+    sprintf(cmd, "curl -i -H \"Content-Type: %s\" -X POST %s:%s/road-to-recovery/createAccount -d \"{\"\"username\"\": \"\"%s\"\", \"\"password\"\" : \"\"%s\"\" }\""
+        , CURL_CONTENT_TYPE, CURL_IP, CURL_PORT, username, password);
+    
+
+    // Open the command for reading
+    FILE* fp = _popen(cmd, "r");
+    if (fp == NULL) {
+        OutputDebugString("Failed to run command\n");
+        return 1;
+    }
+
+    // Read the output a line at a time - output it to the debug console
+    char path[1035];
+    char* line;
+    char* word{};
+    bool flagOK = false;
+
+    while (fgets(path, sizeof(path) - 1, fp) != NULL && !flagOK) {
+
+        line = strtok(path, " ");
+        while (line != NULL && !flagOK) {
+            if (!strncmp("OK", line, 2)) {
+                flagOK = true;
+                //OutputDebugString("found ok");
+                break;
+            }
+
+            line = strtok(NULL, " ");
+        }
+    }
+
+    //OutputDebugString(path);
+
+    // Close the pipe
+    _pclose(fp);
+    
+
+    /*
     FILE* file = fopen("users.dat", "ab");
     if (file != NULL) {
         fwrite(&user, sizeof(User), 1, file);
         fclose(file);
     }
+    */
+    return 0;
 }
 
 int LoginUser(const char* username, const char* password) {
@@ -559,4 +606,21 @@ LRESULT CALLBACK LoginRegisterWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LP
         return DefWindowProc(hwnd, uMsg, wParam, lParam);
     }
     return 0;
+}
+
+
+char* trimwhitespace(char* str) {
+    char* end;
+    // Trim leading space
+    while (isspace((unsigned char)*str))
+        str++;
+    if (*str == 0)  // All spaces?
+        return str;
+    // Trim trailing space
+    end = str + strlen(str) - 1;
+    while (end > str && isspace((unsigned char)*end))
+        end--;
+    // Write new null terminator character
+    end[1] = '\\0';
+    return str;
 }
