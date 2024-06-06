@@ -79,7 +79,6 @@ static const char* directConnectivityAddOnCode = ""; /*hhP4WfC4Zu / nlQ3xGFaVtcI
 LRESULT CALLBACK LoginRegisterWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 int RegisterUser(const char* username, const char* password);
 int LoginUser(const char* username, const char* password);
-char* trimwhitespace(char* str);
 
 #define ID_EDIT_USERNAME 1
 #define ID_EDIT_PASSWORD 2
@@ -508,14 +507,13 @@ int RegisterUser(const char* username, const char* password) {
     // Read the output a line at a time - output it to the debug console
     char path[1035];
     char* line;
-    char* word{};
     bool flagOK = false;
 
     while (fgets(path, sizeof(path) - 1, fp) != NULL && !flagOK) {
 
         line = strtok(path, " ");
         while (line != NULL && !flagOK) {
-            if (!strncmp("OK", line, 2)) {
+            if (!strcmp("201", line)) {
                 flagOK = true;
                 //OutputDebugString("found ok");
                 break;
@@ -530,6 +528,9 @@ int RegisterUser(const char* username, const char* password) {
     // Close the pipe
     _pclose(fp);
     
+    if (!flagOK) {
+        return 1;
+    }
 
     /*
     FILE* file = fopen("users.dat", "ab");
@@ -542,7 +543,56 @@ int RegisterUser(const char* username, const char* password) {
 }
 
 int LoginUser(const char* username, const char* password) {
-    User user;
+    //User user;
+
+
+    // Command to execute
+    char cmd[254];
+    sprintf(cmd, "curl -i -H \"Content-Type: %s\" -X POST %s:%s/road-to-recovery/signIn -d \"{\"\"username\"\": \"\"%s\"\", \"\"password\"\" : \"\"%s\"\" }\""
+        , CURL_CONTENT_TYPE, CURL_IP, CURL_PORT, username, password);
+
+    // Open the command for reading
+    FILE* fp = _popen(cmd, "r");
+    if (fp == NULL) {
+        OutputDebugString("Failed to run command\n");
+        return -1;
+    }
+
+    // Read the output a line at a time - output it to the debug console
+    char path[1035];
+    char* line;
+    bool flagOK = false;
+
+    while (fgets(path, sizeof(path) - 1, fp) != NULL && !flagOK) {
+        //OutputDebugString(path);
+        line = strtok(path, " ");
+        while (line != NULL && !flagOK) {
+            if (!strcmp("202", line)) {
+                //OutputDebugString(line);
+                flagOK = true;
+                //OutputDebugString("found ok");
+
+                // Close the pipe
+                _pclose(fp);
+                return 1;
+                break;
+            }
+
+            line = strtok(NULL, " ");
+        }
+    }
+
+    //OutputDebugString(path);
+
+    // Close the pipe
+    _pclose(fp);
+
+    if (!flagOK) {
+        return 0;
+    }
+
+
+    /*
     FILE* file = fopen("users.dat", "rb");
     if (file != NULL) {
         while (fread(&user, sizeof(User), 1, file)) {
@@ -553,6 +603,8 @@ int LoginUser(const char* username, const char* password) {
         }
         fclose(file);
     }
+    */
+
     return 0;
 }
 
@@ -577,8 +629,14 @@ LRESULT CALLBACK LoginRegisterWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LP
             char password[30];
             GetWindowText(hEditUsername, username, 30);
             GetWindowText(hEditPassword, password, 30);
-            RegisterUser(username, password);
-            MessageBox(hwnd, "Registration successful!", "Info", MB_OK);
+
+            if (!RegisterUser(username, password)) {
+                MessageBox(hwnd, "Registration successful!", "Info", MB_OK);
+            }
+            else {
+                MessageBox(hwnd, "Registration failed!", "Info", MB_OK);
+            }
+            
         }
         else if (LOWORD(wParam) == ID_BUTTON_LOGIN) {
             char username[30];
@@ -606,21 +664,4 @@ LRESULT CALLBACK LoginRegisterWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LP
         return DefWindowProc(hwnd, uMsg, wParam, lParam);
     }
     return 0;
-}
-
-
-char* trimwhitespace(char* str) {
-    char* end;
-    // Trim leading space
-    while (isspace((unsigned char)*str))
-        str++;
-    if (*str == 0)  // All spaces?
-        return str;
-    // Trim trailing space
-    end = str + strlen(str) - 1;
-    while (end > str && isspace((unsigned char)*end))
-        end--;
-    // Write new null terminator character
-    end[1] = '\\0';
-    return str;
 }
