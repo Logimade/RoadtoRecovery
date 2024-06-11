@@ -27,9 +27,12 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#define _CRT_SECURE_NO_WARNINGS
+
 #include <iostream>
 #include <sstream>
 #include <vnc/Vnc.h>
+#include <thread>
 
 #include "BasicViewerWindow.h"
 
@@ -77,6 +80,8 @@ static const char* directConnectivityAddOnCode = ""; /*hhP4WfC4Zu / nlQ3xGFaVtcI
 
    // Function prototypes for login/register functions
 LRESULT CALLBACK LoginRegisterWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+LRESULT CALLBACK RegisterWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
 int RegisterUser(const char* username, const char* password);
 int LoginUser(const char* username, const char* password);
 
@@ -91,6 +96,7 @@ typedef struct {
 } User;
 
 bool validLogin = false;
+bool isAdmin = true;
 
 char CURL_IP[18] = "localhost";
 char CURL_PORT[6] = "8000";
@@ -118,6 +124,7 @@ bool makeCloudConnection(const char* localCloudAddress,
 bool makeDirectUdpConnection(const char* hostAddress, int port,
                              vnc_Viewer* viewer);
 void runEventLoop(vnc_Viewer* viewer);
+
 
 
 // Callback function for requesting user credentials
@@ -149,6 +156,52 @@ void requestUserCredentials(void* userData, vnc_Viewer* viewer, vnc_bool_t needU
 }
 
 
+// Secondary window thread function
+DWORD WINAPI SecondaryWindowThread(LPVOID lpParameter) {
+    HINSTANCE hInstance = GetModuleHandle(NULL);
+
+    WNDCLASS wc = { 0 };
+    wc.lpfnWndProc = RegisterWindowProc;
+    wc.hInstance = hInstance;
+    wc.lpszClassName = "MyWindowClass";
+
+    if (!RegisterClass(&wc)) {
+        MessageBox(NULL, "Window class registration failed!", "Error", MB_ICONERROR);
+        return -1;
+    }
+
+    HWND hwnd = CreateWindow(
+        "MyWindowClass",    // class name
+        "ADMIN: Users Registration",        // window caption
+        WS_OVERLAPPEDWINDOW, // window style
+        CW_USEDEFAULT,      // initial x position
+        CW_USEDEFAULT,      // initial y position
+        300,                // initial width
+        200,                // initial height
+        NULL,               // parent window
+        NULL,               // window menu
+        hInstance,          // instance handle
+        NULL                // additional application data
+    );
+
+    if (!hwnd) {
+        MessageBox(NULL, "Window creation failed!", "Error", MB_ICONERROR);
+        return -1;
+    }
+
+    ShowWindow(hwnd, SW_SHOWNORMAL);
+    UpdateWindow(hwnd);
+
+    // Message loop for the secondary window
+    MSG msg;
+    while (GetMessage(&msg, NULL, 0, 0)) {
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
+
+    return 0;
+}
+
 /*
  * main function - validates cloud addresses, initializes the SDK and the
  * viewer, creates connection handler
@@ -179,7 +232,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   }
 
   // Create the login/register window
-  HWND hwnd = CreateWindowEx(0, "LoginRegisterWindowClass", "Login/Register", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 300, 200, NULL, NULL, hInstance, NULL);
+  HWND hwnd = CreateWindowEx(0, "LoginRegisterWindowClass", "Login", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 300, 200, NULL, NULL, hInstance, NULL);
 
   if (!hwnd)
   {
@@ -208,6 +261,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   {
       return 1;
   }
+
+  
+  if (isAdmin) {
+      // Create a new thread for the secondary window
+      std::thread secondaryWindowThread(SecondaryWindowThread, nullptr);
+      secondaryWindowThread.detach();
+  }
+ 
 
 
   /* Parameter initialisation */
@@ -619,11 +680,12 @@ LRESULT CALLBACK LoginRegisterWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LP
         CreateWindow("STATIC", "Password:", WS_VISIBLE | WS_CHILD, 20, 60, 80, 20, hwnd, NULL, NULL, NULL);
         hEditPassword = CreateWindow("EDIT", "", WS_VISIBLE | WS_CHILD | WS_BORDER | ES_PASSWORD, 100, 60, 150, 20, hwnd, (HMENU)ID_EDIT_PASSWORD, NULL, NULL);
 
-        hButtonRegister = CreateWindow("BUTTON", "Register", WS_VISIBLE | WS_CHILD, 50, 100, 80, 30, hwnd, (HMENU)ID_BUTTON_REGISTER, NULL, NULL);
-        hButtonLogin = CreateWindow("BUTTON", "Login", WS_VISIBLE | WS_CHILD, 150, 100, 80, 30, hwnd, (HMENU)ID_BUTTON_LOGIN, NULL, NULL);
+        //hButtonRegister = CreateWindow("BUTTON", "Register", WS_VISIBLE | WS_CHILD, 50, 100, 80, 30, hwnd, (HMENU)ID_BUTTON_REGISTER, NULL, NULL);
+        hButtonLogin = CreateWindow("BUTTON", "Login", WS_VISIBLE | WS_CHILD, 100, 100, 80, 30, hwnd, (HMENU)ID_BUTTON_LOGIN, NULL, NULL);
         break;
 
     case WM_COMMAND:
+        /*
         if (LOWORD(wParam) == ID_BUTTON_REGISTER) {
             char username[30];
             char password[30];
@@ -638,7 +700,8 @@ LRESULT CALLBACK LoginRegisterWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LP
             }
             
         }
-        else if (LOWORD(wParam) == ID_BUTTON_LOGIN) {
+        */
+        if (LOWORD(wParam) == ID_BUTTON_LOGIN) {
             char username[30];
             char password[30];
             GetWindowText(hEditUsername, username, 30);
@@ -665,3 +728,46 @@ LRESULT CALLBACK LoginRegisterWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LP
     }
     return 0;
 }
+
+
+LRESULT CALLBACK RegisterWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+    static HWND hEditUsername, hEditPassword, hButtonRegister, hButtonLogin;
+
+    switch (uMsg) {
+    case WM_CREATE:
+        CreateWindow("STATIC", "Username:", WS_VISIBLE | WS_CHILD, 20, 20, 80, 20, hwnd, NULL, NULL, NULL);
+        hEditUsername = CreateWindow("EDIT", "", WS_VISIBLE | WS_CHILD | WS_BORDER, 100, 20, 150, 20, hwnd, (HMENU)ID_EDIT_USERNAME, NULL, NULL);
+
+        CreateWindow("STATIC", "Password:", WS_VISIBLE | WS_CHILD, 20, 60, 80, 20, hwnd, NULL, NULL, NULL);
+        hEditPassword = CreateWindow("EDIT", "", WS_VISIBLE | WS_CHILD | WS_BORDER | ES_PASSWORD, 100, 60, 150, 20, hwnd, (HMENU)ID_EDIT_PASSWORD, NULL, NULL);
+
+        hButtonRegister = CreateWindow("BUTTON", "Register User", WS_VISIBLE | WS_CHILD, 100, 100, 100, 30, hwnd, (HMENU)ID_BUTTON_REGISTER, NULL, NULL);
+        break;
+
+    case WM_COMMAND:
+        if (LOWORD(wParam) == ID_BUTTON_REGISTER) {
+            char username[30];
+            char password[30];
+            GetWindowText(hEditUsername, username, 30);
+            GetWindowText(hEditPassword, password, 30);
+
+            if (!RegisterUser(username, password)) {
+                MessageBox(hwnd, "Registration successful!", "Info", MB_OK);
+            }
+            else {
+                MessageBox(hwnd, "Registration failed!", "Info", MB_OK);
+            }
+
+        }
+        break;
+
+    case WM_DESTROY:
+        PostQuitMessage(0);
+        break;
+
+    default:
+        return DefWindowProc(hwnd, uMsg, wParam, lParam);
+    }
+    return 0;
+}
+
