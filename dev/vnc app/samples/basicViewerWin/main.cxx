@@ -41,6 +41,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "BasicViewerWindow.h"
 
+#include <commctrl.h>  // Include the Commctrl header
+
+#pragma comment(lib, "comctl32.lib")  // Link against the Comctl32 library
+
 /*
  * basicViewerWin sample
  * 
@@ -99,7 +103,7 @@ int LoginUser(const char* username, const char* password);
 bool validLogin = false;
 bool isAdmin = false;
 
-char TOKEN[128];
+char TOKEN[256];
 
 
 /* The value of this flag is set automatically according to the user-supplied
@@ -193,9 +197,11 @@ DWORD WINAPI SecondaryWindowThread(LPVOID lpParameter) {
 
     // Message loop for the secondary window
     MSG msg;
-    while (GetMessage(&msg, NULL, 0, 0)) {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
+    while (GetMessage(&msg, NULL, 0, 0) > 0) {
+        if (!IsDialogMessage(hwnd, &msg)) {
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
     }
 
     return 0;
@@ -246,14 +252,24 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   ShowWindow(hwnd, SW_SHOW);
   UpdateWindow(hwnd);
 
+
   // Message loop
   MSG msg;
+
+  while (GetMessage(&msg, NULL, 0, 0) > 0) {
+      if (!IsDialogMessage(hwnd, &msg)) {
+          TranslateMessage(&msg);
+          DispatchMessage(&msg);
+      }
+  }
+
+  /*
   while (GetMessage(&msg, NULL, 0, 0))
   {
       TranslateMessage(&msg);
       DispatchMessage(&msg);
   }
-
+  */
   //return msg.wParam;
   
   if (!validLogin) 
@@ -562,8 +578,9 @@ int RegisterUser(const char* username, const char* password) {
 
     if (curl) {
         // Set URL
+        // 
         curl_easy_setopt(curl, CURLOPT_URL, "https://tidycity.logimade.pt/server/api/road-to-recovery/createAccount");
-
+    
         // Set HTTP POST method
         curl_easy_setopt(curl, CURLOPT_POST, 1L);
 
@@ -578,9 +595,11 @@ int RegisterUser(const char* username, const char* password) {
         headers = curl_slist_append(headers, "Content-Type: application/json");
 
         // Add bearer token to headers
-        char auth_header[100];
+        char auth_header[300];
         snprintf(auth_header, sizeof(auth_header), "Authorization: Bearer %s", TOKEN);
         headers = curl_slist_append(headers, auth_header);
+
+
 
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
@@ -616,16 +635,22 @@ int RegisterUser(const char* username, const char* password) {
             OutputDebugString("httpcode: ");
             snprintf(httpCode, sizeof(httpCode), "%ld", http_code);
             OutputDebugString(httpCode);
+
+            // Clean up
+            curl_slist_free_all(headers);
+            curl_easy_cleanup(curl);
+            curl_global_cleanup();
+
+            if (http_code == 201) {
+                return 0;
+            }
+            else {
+                return 1;
+            }
         }
-
-
-        // Clean up
-        curl_slist_free_all(headers);
-        curl_easy_cleanup(curl);
     }
 
-    curl_global_cleanup();
-    return 0;
+    return 1;
 }
 
 
@@ -753,10 +778,11 @@ int LoginUser(const char* username, const char* password) {
                     }
                 }
             }
-
-                return 1;
+            else {
+                return 0;
             }
         }
+    }
 
         // Clean up
         curl_slist_free_all(headers);
@@ -764,7 +790,7 @@ int LoginUser(const char* username, const char* password) {
         free(chunk.memory);
 
 
-    return 0;
+    return 1;
 }
 
 LRESULT CALLBACK LoginWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
@@ -773,10 +799,10 @@ LRESULT CALLBACK LoginWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPa
     switch (uMsg) {
     case WM_CREATE:
         CreateWindow("STATIC", "Username:", WS_VISIBLE | WS_CHILD, 20, 20, 80, 20, hwnd, NULL, NULL, NULL);
-        hEditUsername = CreateWindow("EDIT", "", WS_VISIBLE | WS_CHILD | WS_BORDER, 100, 20, 150, 20, hwnd, (HMENU)ID_EDIT_USERNAME, NULL, NULL);
+        hEditUsername = CreateWindow("EDIT", "", WS_VISIBLE | WS_CHILD | WS_BORDER | WS_TABSTOP, 100, 20, 150, 20, hwnd, (HMENU)ID_EDIT_USERNAME, NULL, NULL);
 
         CreateWindow("STATIC", "Password:", WS_VISIBLE | WS_CHILD, 20, 60, 80, 20, hwnd, NULL, NULL, NULL);
-        hEditPassword = CreateWindow("EDIT", "", WS_VISIBLE | WS_CHILD | WS_BORDER | ES_PASSWORD, 100, 60, 150, 20, hwnd, (HMENU)ID_EDIT_PASSWORD, NULL, NULL);
+        hEditPassword = CreateWindow("EDIT", "", WS_VISIBLE | WS_CHILD | WS_BORDER | ES_PASSWORD | WS_TABSTOP, 100, 60, 150, 20, hwnd, (HMENU)ID_EDIT_PASSWORD, NULL, NULL);
 
         //hButtonRegister = CreateWindow("BUTTON", "Register", WS_VISIBLE | WS_CHILD, 50, 100, 80, 30, hwnd, (HMENU)ID_BUTTON_REGISTER, NULL, NULL);
         hButtonLogin = CreateWindow("BUTTON", "Login", WS_VISIBLE | WS_CHILD, 100, 100, 80, 30, hwnd, (HMENU)ID_BUTTON_LOGIN, NULL, NULL);
@@ -816,7 +842,18 @@ LRESULT CALLBACK LoginWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPa
             }
         }
         break;
-
+    case WM_KEYDOWN: {
+        if (wParam == VK_TAB) {
+            HWND hWndFocus = GetFocus();
+            if (GetDlgCtrlID(hWndFocus) == ID_EDIT_USERNAME) {
+                SetFocus(GetDlgItem(hwnd, ID_EDIT_PASSWORD));
+            }
+            else if (GetDlgCtrlID(hWndFocus) == ID_EDIT_PASSWORD) {
+                SetFocus(GetDlgItem(hwnd, ID_EDIT_USERNAME));
+            }
+        }
+        break;
+    }
     case WM_DESTROY:
         PostQuitMessage(0);
         break;
@@ -834,10 +871,10 @@ LRESULT CALLBACK RegisterWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM 
     switch (uMsg) {
     case WM_CREATE:
         CreateWindow("STATIC", "Username:", WS_VISIBLE | WS_CHILD, 20, 20, 80, 20, hwnd, NULL, NULL, NULL);
-        hEditUsername = CreateWindow("EDIT", "", WS_VISIBLE | WS_CHILD | WS_BORDER, 100, 20, 150, 20, hwnd, (HMENU)ID_EDIT_USERNAME, NULL, NULL);
+        hEditUsername = CreateWindow("EDIT", "", WS_VISIBLE | WS_CHILD | WS_BORDER | WS_TABSTOP, 100, 20, 150, 20, hwnd, (HMENU)ID_EDIT_USERNAME, NULL, NULL);
 
         CreateWindow("STATIC", "Password:", WS_VISIBLE | WS_CHILD, 20, 60, 80, 20, hwnd, NULL, NULL, NULL);
-        hEditPassword = CreateWindow("EDIT", "", WS_VISIBLE | WS_CHILD | WS_BORDER | ES_PASSWORD, 100, 60, 150, 20, hwnd, (HMENU)ID_EDIT_PASSWORD, NULL, NULL);
+        hEditPassword = CreateWindow("EDIT", "", WS_VISIBLE | WS_CHILD | WS_BORDER | ES_PASSWORD | WS_TABSTOP, 100, 60, 150, 20, hwnd, (HMENU)ID_EDIT_PASSWORD, NULL, NULL);
 
         hButtonRegister = CreateWindow("BUTTON", "Register User", WS_VISIBLE | WS_CHILD, 100, 100, 100, 30, hwnd, (HMENU)ID_BUTTON_REGISTER, NULL, NULL);
         break;
@@ -858,7 +895,18 @@ LRESULT CALLBACK RegisterWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM 
 
         }
         break;
-
+    case WM_KEYDOWN: {
+        if (wParam == VK_TAB) {
+            HWND hWndFocus = GetFocus();
+            if (GetDlgCtrlID(hWndFocus) == ID_EDIT_USERNAME) {
+                SetFocus(GetDlgItem(hwnd, ID_EDIT_PASSWORD));
+            }
+            else if (GetDlgCtrlID(hWndFocus) == ID_EDIT_PASSWORD) {
+                SetFocus(GetDlgItem(hwnd, ID_EDIT_USERNAME));
+            }
+        }
+        break;
+    }
     case WM_DESTROY:
         PostQuitMessage(0);
         break;
