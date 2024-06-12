@@ -33,6 +33,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sstream>
 #include <vnc/Vnc.h>
 #include <thread>
+#include <curl/curl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 
 #include "BasicViewerWindow.h"
 
@@ -79,7 +84,7 @@ static const char* directConnectivityAddOnCode = ""; /*hhP4WfC4Zu / nlQ3xGFaVtcI
 
 
    // Function prototypes for login/register functions
-LRESULT CALLBACK LoginRegisterWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+LRESULT CALLBACK LoginWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK RegisterWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 int RegisterUser(const char* username, const char* password);
@@ -90,17 +95,11 @@ int LoginUser(const char* username, const char* password);
 #define ID_BUTTON_REGISTER 3
 #define ID_BUTTON_LOGIN 4
 
-typedef struct {
-    char username[30];
-    char password[30];
-} User;
 
 bool validLogin = false;
-bool isAdmin = true;
+bool isAdmin = false;
 
-char CURL_IP[18] = "localhost";
-char CURL_PORT[6] = "8000";
-char CURL_CONTENT_TYPE[30] = "application/json";
+char TOKEN[128];
 
 
 /* The value of this flag is set automatically according to the user-supplied
@@ -213,7 +212,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   WNDCLASSEX wc;
   wc.cbSize = sizeof(WNDCLASSEX);
   wc.style = 0;
-  wc.lpfnWndProc = LoginRegisterWindowProc;
+  wc.lpfnWndProc = LoginWindowProc;
   wc.cbClsExtra = 0;
   wc.cbWndExtra = 0;
   wc.hInstance = hInstance;
@@ -221,7 +220,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   wc.hCursor = LoadCursor(NULL, IDC_ARROW);
   wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
   wc.lpszMenuName = NULL;
-  wc.lpszClassName = "LoginRegisterWindowClass";
+  wc.lpszClassName = "LoginWindowClass";
   wc.hIconSm = NULL;
 
   if (!RegisterClassEx(&wc))
@@ -231,8 +230,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
       return 1;
   }
 
-  // Create the login/register window
-  HWND hwnd = CreateWindowEx(0, "LoginRegisterWindowClass", "Login", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 300, 200, NULL, NULL, hInstance, NULL);
+  // Create the login window
+  HWND hwnd = CreateWindowEx(0, "LoginWindowClass", "Login", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 300, 200, NULL, NULL, hInstance, NULL);
 
   if (!hwnd)
   {
@@ -548,128 +547,227 @@ void showSDKError(const char* errorString)
 
 int RegisterUser(const char* username, const char* password) {
     
-    User user;
-    strcpy(user.username, username);
-    strcpy(user.password, password);
+    CURL* curl;
+    CURLcode res;
 
-    // Command to execute
-    char cmd[254];
-    sprintf(cmd, "curl -i -H \"Content-Type: %s\" -X POST %s:%s/road-to-recovery/createAccount -d \"{\"\"username\"\": \"\"%s\"\", \"\"password\"\" : \"\"%s\"\" }\""
-        , CURL_CONTENT_TYPE, CURL_IP, CURL_PORT, username, password);
-    
+    struct curl_slist* headers = NULL;
+    // Bearer tokenconstchar *bearer_token = "your_bearer_token_here";
 
-    // Open the command for reading
-    FILE* fp = _popen(cmd, "r");
-    if (fp == NULL) {
-        OutputDebugString("Failed to run command\n");
-        return 1;
-    }
+    long http_code = 0;
+    char httpCode[16];  //for debugging
 
-    // Read the output a line at a time - output it to the debug console
-    char path[1035];
-    char* line;
-    bool flagOK = false;
+    // Initialize curl
+    curl_global_init(CURL_GLOBAL_ALL);
+    curl = curl_easy_init();
 
-    while (fgets(path, sizeof(path) - 1, fp) != NULL && !flagOK) {
+    if (curl) {
+        // Set URL
+        curl_easy_setopt(curl, CURLOPT_URL, "https://tidycity.logimade.pt/server/api/road-to-recovery/createAccount");
 
-        line = strtok(path, " ");
-        while (line != NULL && !flagOK) {
-            if (!strcmp("201", line)) {
-                flagOK = true;
-                //OutputDebugString("found ok");
-                break;
-            }
+        // Set HTTP POST method
+        curl_easy_setopt(curl, CURLOPT_POST, 1L);
 
-            line = strtok(NULL, " ");
+        // JSON data to be sent in the POST request
+        char post_data[64];
+        snprintf(post_data, sizeof(post_data), "{\"username\": \"%s\", \"password\": \"%s\"}", username, password);
+
+        // Set JSON data
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_data);
+
+        // Set content type to application/jsonstruct 
+        headers = curl_slist_append(headers, "Content-Type: application/json");
+
+        // Add bearer token to headers
+        char auth_header[100];
+        snprintf(auth_header, sizeof(auth_header), "Authorization: Bearer %s", TOKEN);
+        headers = curl_slist_append(headers, auth_header);
+
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+        // Bypass SSL verification (Not recommended for production)
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+
+        // Perform the request
+        res = curl_easy_perform(curl);
+
+        // Check for errors
+        if (res != CURLE_OK) {
+
+            OutputDebugString("curl_easy_perform() failed: ");
+            OutputDebugString(curl_easy_strerror(res));
+            //fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+
+            OutputDebugString("\n");
+            curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+            OutputDebugString("httpcode: ");
+            snprintf(httpCode, sizeof(httpCode), "%ld", http_code);
+            OutputDebugString(httpCode);
+
+            return 1;
         }
+        else {
+
+            OutputDebugString("curl_easy_perform() succeed: ");
+            OutputDebugString(curl_easy_strerror(res));
+
+            OutputDebugString("\n");
+            curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+            OutputDebugString("httpcode: ");
+            snprintf(httpCode, sizeof(httpCode), "%ld", http_code);
+            OutputDebugString(httpCode);
+        }
+
+
+        // Clean up
+        curl_slist_free_all(headers);
+        curl_easy_cleanup(curl);
     }
 
-    //OutputDebugString(path);
-
-    // Close the pipe
-    _pclose(fp);
-    
-    if (!flagOK) {
-        return 1;
-    }
-
-    /*
-    FILE* file = fopen("users.dat", "ab");
-    if (file != NULL) {
-        fwrite(&user, sizeof(User), 1, file);
-        fclose(file);
-    }
-    */
+    curl_global_cleanup();
     return 0;
+}
+
+
+// Structure to store the response data
+struct ResponseData {
+    char* memory;
+    size_t size;
+};
+
+// Callback function to handle the data received from the server
+static size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp) {
+    size_t realsize = size * nmemb;
+    struct ResponseData* mem = (struct ResponseData*)userp;
+
+    char* ptr = (char*)realloc(mem->memory, mem->size + realsize + 1);
+
+    if (ptr == NULL) {
+        // Out of memory
+        fprintf(stderr, "Failed to allocate memory\n");
+        return 0;
+    }
+
+    mem->memory = ptr;
+    memcpy(&(mem->memory[mem->size]), contents, realsize);
+    mem->size += realsize;
+    mem->memory[mem->size] = 0;
+
+    return realsize;
 }
 
 int LoginUser(const char* username, const char* password) {
     //User user;
 
+    CURL* curl;
+    CURLcode res;
+    long http_code = 0;
+    char httpCode[16];  //for debugging
 
-    // Command to execute
-    char cmd[254];
-    sprintf(cmd, "curl -i -H \"Content-Type: %s\" -X POST %s:%s/road-to-recovery/signIn -d \"{\"\"username\"\": \"\"%s\"\", \"\"password\"\" : \"\"%s\"\" }\""
-        , CURL_CONTENT_TYPE, CURL_IP, CURL_PORT, username, password);
+    struct curl_slist* headers = NULL;
 
-    // Open the command for reading
-    FILE* fp = _popen(cmd, "r");
-    if (fp == NULL) {
-        OutputDebugString("Failed to run command\n");
-        return -1;
+
+    // Structure to hold response data
+    struct ResponseData chunk;
+    chunk.memory = (char*)malloc(1);  // Allocate initial memory
+    if (chunk.memory == NULL) {
+        fprintf(stderr, "Failed to allocate memory\n");
+        return 1;
     }
+    chunk.memory[0] = '\0';     // Ensure the string is null-terminated
+    chunk.size = 0;             // Initialize size
 
-    // Read the output a line at a time - output it to the debug console
-    char path[1035];
-    char* line;
-    bool flagOK = false;
 
-    while (fgets(path, sizeof(path) - 1, fp) != NULL && !flagOK) {
-        //OutputDebugString(path);
-        line = strtok(path, " ");
-        while (line != NULL && !flagOK) {
-            if (!strcmp("202", line)) {
-                //OutputDebugString(line);
-                flagOK = true;
-                //OutputDebugString("found ok");
+    // JSON data to be sent in the POST request
+    char post_data[64];
 
-                // Close the pipe
-                _pclose(fp);
-                return 1;
-                break;
+    snprintf(post_data, sizeof(post_data), "{\"username\": \"%s\", \"password\": \"%s\"}", username, password);
+
+    curl = curl_easy_init();
+    if (curl) {
+        curl_easy_setopt(curl, CURLOPT_URL, "https://tidycity.logimade.pt/server/api/road-to-recovery/signIn");
+
+        // Specify that this is a POST request
+        curl_easy_setopt(curl, CURLOPT_POST, 1L);
+
+        // Set the POST data
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_data);
+
+        // Set the Content-Type header
+        headers = curl_slist_append(headers, "Content-Type: application/json");
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+        // Bypass SSL verification (Not recommended for production)
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+
+        // Set the callback function to handle the response data
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+
+        // Pass the ResponseData structure to the callback function
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)&chunk);
+
+        /* Perform the request, res gets the return code */
+        res = curl_easy_perform(curl);
+        /* Check for errors */
+        if (res != CURLE_OK) {
+            OutputDebugString("curl_easy_perform() failed: ");
+            OutputDebugString(curl_easy_strerror(res));
+            //fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+
+            OutputDebugString("\n");
+            curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+            OutputDebugString("httpcode: ");
+            snprintf(httpCode, sizeof(httpCode), "%ld", http_code);
+            OutputDebugString(httpCode);
+        }
+        else {
+            OutputDebugString("curl_easy_perform() succeed: ");
+            OutputDebugString(curl_easy_strerror(res));
+
+            OutputDebugString("\n");
+            curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+            OutputDebugString("httpcode: ");
+            snprintf(httpCode, sizeof(httpCode), "%ld", http_code);
+            OutputDebugString(httpCode);
+
+            if (http_code == 202) {
+                validLogin = true;
+
+                OutputDebugStringA(chunk.memory);
+
+                char* json;
+
+                json = strtok(chunk.memory, "{},\":");
+
+                if (!strncmp(json, "token_type", 10)) {
+                    json = strtok(NULL, "{},\":");      // "bearer"
+
+                    if (!strncmp(json, "bearer", 6)) {
+                        isAdmin = true;
+
+                        json = strtok(NULL, "{},\":");  //  "access_token"
+                        json = strtok(NULL, "{},\":");  //  the token itself
+
+                        strcpy(TOKEN, json);
+                    }
+                }
             }
 
-            line = strtok(NULL, " ");
-        }
-    }
-
-    //OutputDebugString(path);
-
-    // Close the pipe
-    _pclose(fp);
-
-    if (!flagOK) {
-        return 0;
-    }
-
-
-    /*
-    FILE* file = fopen("users.dat", "rb");
-    if (file != NULL) {
-        while (fread(&user, sizeof(User), 1, file)) {
-            if (strcmp(user.username, username) == 0 && strcmp(user.password, password) == 0) {
-                fclose(file);
                 return 1;
             }
         }
-        fclose(file);
-    }
-    */
+
+        // Clean up
+        curl_slist_free_all(headers);
+        curl_easy_cleanup(curl);
+        free(chunk.memory);
+
 
     return 0;
 }
 
-LRESULT CALLBACK LoginRegisterWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+LRESULT CALLBACK LoginWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     static HWND hEditUsername, hEditPassword, hButtonRegister, hButtonLogin;
 
     switch (uMsg) {
