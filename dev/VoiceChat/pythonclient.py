@@ -23,20 +23,20 @@ print("_________________________________________________________________________
 
 #SERVER_IP = '34.118.67.46'  # Change this to the external IP of the server
 
-file_path = "../VoiceChat Server IP.txt"
-ip_default = "34.118.67.46"
-ip = 0
+file_path = "./VoiceChat Server IP.txt"
+ip_default = "roadtorecovery.logimade.com"
+ip = None
 
 try:
     with open(file_path, 'r') as file:
-        o = file.read()
-        ip = re.search( r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}", o )
+        ip = file.read()
+        #ip = re.search( r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}", o )
 except FileNotFoundError:
     with open(file_path, 'w') as file:
         file.write(ip_default)
 
 if ip:
-    SERVER_IP = ip.group()
+    SERVER_IP = ip
 else:
     SERVER_IP = ip_default
 
