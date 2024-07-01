@@ -181,6 +181,34 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             NULL                // no additional data
         );
 
+        g_hwndButton = CreateWindow(
+            "BUTTON",           // predefined class
+            "Temp Sensor",         // button text
+            WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,  // styles
+            150,                 // x position
+            10,                 // y position
+            110,                // button width (def: 100)
+            30,                 // button height (def: 30)
+            hwnd,               // parent window
+            (HMENU)11,           // button ID
+            hInstance,          // instance handle
+            NULL                // no additional data
+        );
+
+        g_hwndButton = CreateWindow(
+            "BUTTON",           // predefined class
+            "Ecg Sensor",         // button text
+            WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,  // styles
+            150,                 // x position
+            50,                 // y position
+            110,                // button width (def: 100)
+            30,                 // button height (def: 30)
+            hwnd,               // parent window
+            (HMENU)22,           // button ID
+            hInstance,          // instance handle
+            NULL                // no additional data
+        );
+
         hwndEdit = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "192.168.1.222", WS_BORDER | WS_CHILD | WS_VISIBLE | ES_LEFT, 10, 150, 120, 18, hwnd, (HMENU) 4, hInstance, NULL);
 
         g_hwndButton = CreateWindow(
@@ -356,6 +384,99 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             }
             puts("Data Sent.");
         }
+
+        if (LOWORD(wParam) == 11) {
+            puts("Button 11 clicked!");
+            // Button with ID 3 was clicked
+            // Handle button click here
+
+            //printf("Inicio da Criacao do socket\n");      // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ Socket START @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+            printf("\nInitialising Winsock...");
+            if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
+            {
+                printf("Failed. Error Code : %d", WSAGetLastError());
+                return 1;
+            }
+            printf("Initialised.");
+
+            if ((s = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET)
+            {
+                printf("Could not create socket : %d", WSAGetLastError());
+            }
+            printf("Socket created.\n");
+
+            socket_Server.sin_addr.s_addr = addr;
+            socket_Server.sin_family = AF_INET;
+            socket_Server.sin_port = portShort;
+
+
+            //Connect to remote server
+            if (connect(s, (struct sockaddr*)&socket_Server, sizeof(socket_Server)) < 0)
+            {
+                puts("connect error");
+                return 1;
+            }
+            puts("Connected");
+
+            // printf("Final da Criacao do Socket.\n");     // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ Socket END @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+            //Send some data
+            message = "S1: 37.5";
+            if (send(s, message, strlen(message), 0) < 0)
+            {
+                puts("Send failed");
+                return 1;
+            }
+            puts("Data Sent.");
+        }
+
+        if (LOWORD(wParam) == 22) {
+            puts("Button 11 clicked!");
+            // Button with ID 3 was clicked
+            // Handle button click here
+
+            //printf("Inicio da Criacao do socket\n");      // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ Socket START @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+            printf("\nInitialising Winsock...");
+            if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
+            {
+                printf("Failed. Error Code : %d", WSAGetLastError());
+                return 1;
+            }
+            printf("Initialised.");
+
+            if ((s = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET)
+            {
+                printf("Could not create socket : %d", WSAGetLastError());
+            }
+            printf("Socket created.\n");
+
+            socket_Server.sin_addr.s_addr = addr;
+            socket_Server.sin_family = AF_INET;
+            socket_Server.sin_port = portShort;
+
+
+            //Connect to remote server
+            if (connect(s, (struct sockaddr*)&socket_Server, sizeof(socket_Server)) < 0)
+            {
+                puts("connect error");
+                return 1;
+            }
+            puts("Connected");
+
+            // printf("Final da Criacao do Socket.\n");     // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ Socket END @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+            //Send some data
+            message = "S3: test";
+            if (send(s, message, strlen(message), 0) < 0)
+            {
+                puts("Send failed");
+                return 1;
+            }
+            puts("Data Sent.");
+        }
+
 
         if (LOWORD(wParam) == 5){
             int len = GetWindowTextLengthW(hwndEdit) + 1;

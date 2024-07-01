@@ -1,4 +1,4 @@
-/* Copyright (C) 2016-2023 RealVNC Limited. All rights reserved.
+/* Copyright (C) 2016-2024 RealVNC Limited. All rights reserved.
  */
 
 #ifndef __VNC_CLOUD_H__

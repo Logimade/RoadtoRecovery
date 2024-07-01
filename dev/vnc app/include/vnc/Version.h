@@ -1,4 +1,4 @@
-/* Copyright (C) 2016-2023 RealVNC Limited. All rights reserved.
+/* Copyright (C) 2016-2024 RealVNC Limited. All rights reserved.
  */
 
 #ifndef __VNC_VERSION_H__
@@ -24,11 +24,11 @@
 /** The compile-time major version number of the SDK. */
 #define VNC_SDK_MAJOR_VERSION 1
 /** The compile-time minor version number of the SDK. */
-#define VNC_SDK_MINOR_VERSION 10
+#define VNC_SDK_MINOR_VERSION 12
 /** The compile-time patch version number of the SDK. */
-#define VNC_SDK_PATCH_VERSION 2
+#define VNC_SDK_PATCH_VERSION 4
 /** The compile-time build number of the SDK. */
-#define VNC_SDK_BUILD_NUMBER 51784
+#define VNC_SDK_BUILD_NUMBER 49
 
 #ifdef __cplusplus
 extern "C" {

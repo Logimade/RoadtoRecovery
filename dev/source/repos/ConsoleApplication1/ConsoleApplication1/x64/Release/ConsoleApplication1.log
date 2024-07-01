@@ -1,6 +1,8 @@
-﻿  main.cxx
+﻿  BasicViewerWindow.cxx
+C:\Users\HCI4H\Documents\GitHub\RoadtoRecovery\dev\vnc app\samples\basicViewerWin\BasicViewerWindow.cxx(321,44): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+  main.cxx
   Generating code
-  6 of 422 functions ( 1.4%) were compiled, the rest were copied from previous compilation.
+  2 of 422 functions ( 0.5%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
     0 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
