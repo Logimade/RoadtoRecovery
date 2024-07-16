@@ -27,8 +27,8 @@ powershell -ExecutionPolicy Bypass -File "ShowWindow.ps1" -ProcessName "%process
 
 
 :WAIT_LOOP
-rem Check if scrcpy process is still running
-tasklist /FI "IMAGENAME eq scrcpy.exe" 2>NUL | find /I /N "scrcpy.exe">NUL
+rem Check if Server process is still running
+tasklist /FI "IMAGENAME eq R2R Ambulance.exe" 2>NUL | find /I /N "R2R Ambulance.exe">NUL
 if "%ERRORLEVEL%"=="0" (
     rem Process is still running, wait and check again
     TIMEOUT /T 1 /NOBREAK
