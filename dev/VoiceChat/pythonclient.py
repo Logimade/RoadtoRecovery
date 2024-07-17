@@ -45,7 +45,8 @@ print("SERVER_IP:"+str(SERVER_IP))
 FONTE = 'Medic'
 DESTINO = 'Ambulance'
 
-SERVER_PORT = 9001
+#SERVER_PORT = 9001
+SERVER_PORT = 8765
 running = True
 item_available = Condition()
 # amount of time CPU sleeps between sending recordings to the server
@@ -77,6 +78,10 @@ key = b'thisisthepasswordforAESencryptio'
 iv = get_random_bytes(16)
 cipher = AES.new(key, AES.MODE_CBC, iv)
 cphr = None
+
+
+def create_udp_socket():
+    return socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 
 def get_iv():
@@ -199,62 +204,62 @@ def record(t):
         return recorded
 
 
-def transmit(buf, socket):
+def transmit(buf, udp_socket, server_address):
     global running
     pickled = buf.tobytes()
     encrypted_str = encrypt(pickled)
 
     try:
-        split_send_bytes(socket, encrypted_str)
-    except timeout:
-        print("SOCKET TIMEOUT")
-        running = False
-    except BrokenPipeError:
-        print("Recipient disconnected")
+        udp_socket.sendto(encrypted_str, server_address)
+    except Exception as e:
+        print(f"Error in transmission: {e}")
         running = False
 
 
-def record_transmit_thread(serversocket):
+
+def record_transmit_thread(server_address):
     print("***** STARTING RECORD TRANSMIT THREAD *****")
     tbuf = SharedBuf(SHARED_BUF_SIZE)
     global running
 
+    udp_socket = create_udp_socket()
+
     def recorder_producer(buf):
         global running
         while running:
-            sleep(SLEEPTIME/100)
-            # record does not need a lock because it is not a shared resource
+            sleep(SLEEPTIME / 100)
             data = record(RECORDING_SIZE)
             if data is not None:
                 with item_available:
-                    # if buffer is full, wait for it to be emptied
                     if item_available.wait_for(lambda: buf.getlen() <= SHARED_BUF_SIZE, timeout=2):
                         buf.extbuf(data)
                     item_available.notify()
         print("RECORDER ENDS HERE")
 
-    def transmitter_consumer(buf, serversocket):
+    def transmitter_consumer(buf, udp_socket, server_address):
         global running
         while running:
             sleep(SLEEPTIME)
             with item_available:
-                # if buffer is empty, wait for it to be filled
                 item_available.wait_for(lambda: buf.getlen() >= TX_BATCH_SIZE, timeout=2)
                 payload = buf.getx(TX_BATCH_SIZE)
                 item_available.notify()
-            transmit(payload, serversocket)
+            transmit(payload, udp_socket, server_address)
 
         print("TRANSMITTER ENDS HERE")
 
     rec_thread = Thread(target=recorder_producer, args=(tbuf,))
-    tr_thread = Thread(target=transmitter_consumer, args=(tbuf, serversocket))
+    tr_thread = Thread(target=transmitter_consumer, args=(tbuf, udp_socket, server_address))
 
     rec_thread.start()
     tr_thread.start()
 
     rec_thread.join()
     tr_thread.join()
+
+    udp_socket.close()
     return
+
 
 
 # use a sound library to play the buffer
@@ -335,45 +340,62 @@ def receive_play_thread(serversocket):
 
 
 def main():
-    serversocket = connect()
+    server_address = (SERVER_IP, SERVER_PORT)
     global running
-    t_thread = Thread(target=record_transmit_thread, args=(serversocket,))
-    p_thread = Thread(target=receive_play_thread, args=(serversocket,))
+    udp_socket = connect(server_address)
+    if not udp_socket:
+        print("Failed to establish UDP connection. Exiting.")
+        return
+
+    t_thread = Thread(target=record_transmit_thread, args=(udp_socket,))
+    p_thread = Thread(target=receive_play_thread, args=(udp_socket,))
     t_thread.start()
     p_thread.start()
-    input("press enter to exit")
+
+    input("Press Enter to exit")
     running = False
     sdstream.stop()
     t_thread.join()
     p_thread.join()
-    serversocket.close()
+    udp_socket.close()
+
+    print("Client terminating.")
 
 
-def connect():
-    global source_name
-    global SERVER_IP
-    global SERVER_PORT
-    global destination_name
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    s.connect((SERVER_IP, SERVER_PORT))
+def connect(server_address):
+    global FONTE, DESTINO, running
 
-    #source_name = str(input("enter source name :"))
-    source_name = FONTE
-    print(f"hello {source_name}")
-    print(f"message length = {len((source_name + (' ' * (512 - len(source_name)))).encode())}")
-    s.send((source_name + (' ' * (512 - len(source_name)))).encode())
+    udp_socket = create_udp_socket()
 
-    #destination_name = str(input("enter destination name :"))
-    destination_name = DESTINO
-    s.send((destination_name + (' ' * (512 - len(destination_name)))).encode())
-    sleep(2)
-    val = s.recv(2)
-    if val.decode() != 'go':
-        raise TypeError
-    # returns socket fd
-    s.settimeout(5.0)
-    return s
+    # Send source name
+    source_name = FONTE.encode('utf-8')
+    source_name_padded = source_name + b' ' * (512 - len(source_name))
+    udp_socket.sendto(source_name_padded, server_address)
+    print(f"Hello {FONTE}")
+
+    # Send destination name
+    destination_name = DESTINO.encode('utf-8')
+    destination_name_padded = destination_name + b' ' * (512 - len(destination_name))
+    udp_socket.sendto(destination_name_padded, server_address)
+
+    # Wait for acknowledgment from the server to start communication
+    try:
+        data, _ = udp_socket.recvfrom(2)
+        if data.decode('utf-8') == 'go':
+            print("Server acknowledged. Starting communication.")
+        else:
+            print("Server did not acknowledge correctly.")
+            raise Exception("Server acknowledgment error")
+    except Exception as e:
+        print(f"Error connecting to server: {e}")
+        running = False
+        return None
+
+    return udp_socket
+
+
+
 
 
 main()

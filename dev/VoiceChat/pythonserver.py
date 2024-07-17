@@ -1,115 +1,65 @@
-from time import sleep
-from threading import Thread, Lock, Condition
-import pickle
 import socket
+from threading import Thread
 
-SOCK_IP = '0.0.0.0'  # internal IP  of the server
+SOCK_IP = '0.0.0.0'  # internal IP of the server
 SOCK_PORT = 8765
 
+class ClientHandler(Thread):
+    def __init__(self, client_address):
+        super().__init__()
+        self.client_address = client_address
+        self.udp_socket = None
 
-class Client:
-    allClients = []
-    availableClients = {}  # {'client name' : client object}
-
-
-    def __init__(self, client_ptr):
-        Client.allClients.append(self)
-        self.cl_ptr = client_ptr
-        self.name = None
-        self.name = self.get_name()
-        self.recipient_name = None
-        self.recipient_name = self.get_recipient_name()
-        print(f"received name {self.name} and recipient {self.recipient_name}")
-        Client.availableClients[self.name] = self
+    def run(self):
         try:
-            self.lobby()
-        except ConnectionResetError:
-            print("CONNECTION RESET ERROR")
-            self.close()
-        except BrokenPipeError:
-            print("BROKEN PIPE. Closing connection")
-            self.close()
+            self.udp_socket = create_udp_socket()
+            self.receive_names()
+        except Exception as e:
+            print(f"Error in ClientHandler thread: {e}")
+        finally:
+            if self.udp_socket:
+                self.udp_socket.close()
 
-    def lobby(self):
-        cl = None
-        while True:
-            try:
-                cl = Client.availableClients[self.recipient_name]
-                if cl.get_recipient_name() == self.name:
-                    break
-                else:
-                    print("recipient busy.")
-                    sleep(1)
-            except KeyError:
-                print("waiting...")
-                sleep(1)
-                continue
-        if cl is not None:
-            # found a client who wants to connect to self
-            self.cl_ptr[0].send('go'.encode())
-            self.converse(cl)
-        self.close()
-
-    # Enter a loop to keep searching for recipient in available clients
-
-    def get_name(self):
-        if self.name is None:
-            # receive name
-            self.name = self.cl_ptr[0].recv(512).decode().rstrip()
-            print(f"Client connected: {self.name}")
-        return self.name
-
-    def get_recipient_name(self):
-        if self.recipient_name is None:
-            # receive recipient name
-            self.recipient_name = self.cl_ptr[0].recv(512).decode().rstrip()
-            print(f"Client {self.name} wants to connect to {self.recipient_name}")
-        return self.recipient_name
-
-    # def getRecipientSocket(self):
-    #     search list of available clients
-
-    def converse(self, recipient_obj):
-        print("establishing connection...")
+    def receive_names(self):
         try:
+            data, _ = self.udp_socket.recvfrom(1024)
+            source_name = data.decode('utf-8').rstrip()
+            print(f"Client connected: {source_name}")
+
+            data, _ = self.udp_socket.recvfrom(1024)
+            destination_name = data.decode('utf-8').rstrip()
+            print(f"{source_name} wants to connect to {destination_name}")
+
+            self.udp_socket.sendto('go'.encode('utf-8'), self.client_address)
+
             while True:
-                self.send(recipient_obj, self.read())
-        except KeyboardInterrupt:
-            self.close()
-        except OSError:
-            self.close()
+                data, _ = self.udp_socket.recvfrom(1024)
+                print(f"Received from {source_name}: {data.decode('utf-8')}")
+        except Exception as e:
+            print(f"Error handling client: {e}")
 
-    def send(self, cl_object, data):
-        cl_object.cl_ptr[0].send(data)
-
-    def read(self):
-        return self.cl_ptr[0].recv(1024)
-
-    def close(self):
-        try:
-            Client.allClients.remove(self)
-        except ValueError:
-            print("Client does not exist in 'allClients' array")
-        Client.availableClients.pop(self.get_name(), None)
-        self.cl_ptr[0].close()
-        print(f"Client {self.name} removed.")
+def create_udp_socket():
+    return socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 def main():
-    serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    print(f"binding socket on {SOCK_IP}:{SOCK_PORT}")
-    serversocket.bind((SOCK_IP, SOCK_PORT))
-    serversocket.listen(3)
+    udp_socket = create_udp_socket()
+    print(f"Binding socket on {SOCK_IP}:{SOCK_PORT}")
 
-    while True:
-        try:
-            client_id = (serversocket.accept(),)
-            thrd1 = Thread(target=client_handler, args=client_id)
-            thrd1.start()
-        except KeyboardInterrupt:
-            serversocket.close()
-            break
+    try:
+        udp_socket.bind((SOCK_IP, SOCK_PORT))
 
-def client_handler(clientid):
-    Client(clientid)
+        while True:
+            try:
+                data, client_address = udp_socket.recvfrom(1024)
+                client_handler = ClientHandler(client_address)
+                client_handler.start()
+            except Exception as e:
+                print(f"Error in main loop: {e}")
 
-main()
+    except Exception as e:
+        print(f"Error in main thread: {e}")
+    finally:
+        udp_socket.close()
+
+if __name__ == "__main__":
+    main()
