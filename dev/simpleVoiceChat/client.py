@@ -57,12 +57,19 @@ def receive_audio():
         print(f"Failed to open output stream: {e}")
         return
 
-    print("Connected to the server.")
-
+    connection = False
+    flagOneTime = False
     while True:
         try:
+            if not connection:
+                print("Awaiting connection...")
+            elif not flagOneTime:
+                print("Connected.")
+                flagOneTime = True
+
             data, addr = client_socket.recvfrom(1024)
             stream.write(data)
+            connection = True
         except socket.timeout:
             continue
         except Exception as e:
@@ -71,8 +78,6 @@ def receive_audio():
 
 # Connect to the server
 try:
-    client_socket.sendto(b"Connected to the server.", (SERVER_IP, SERVER_PORT))
-
     send_thread = threading.Thread(target=send_audio)
     receive_thread = threading.Thread(target=receive_audio)
 
