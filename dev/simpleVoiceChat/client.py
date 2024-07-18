@@ -1,40 +1,88 @@
-from vidstream import AudioSender, AudioReceiver
-import threading
 import socket
-import time
-import atexit
+import pyaudio
+import threading
 
-# Function to stop the receiver properly
-def stop_receiver():
-    print("Stopping receiver...")
-    receiver.stop_server()  # This assumes there's a method to stop the server in AudioReceiver
-    receive_thread.join()
+# Server configuration
+SERVER_IP = "188.37.225.70"  # Change to your server's public IP address
+SERVER_PORT = 9001
 
-# Function to stop the sender properly
-def stop_sender():
-    print("Stopping sender...")
-    sender.stop_stream()  # This assumes there's a method to stop the stream in AudioSender
-    sender_thread.join()
+# Audio configuration
+CHUNK = 512  # Reduce chunk size
+FORMAT = pyaudio.paInt16
+CHANNELS = 1
+RATE = 44100
 
-receiver = AudioReceiver('192.168.1.194', 9999)
-receive_thread = threading.Thread(target=receiver.start_server)
-
-sender = AudioSender('192.168.1.77', 5555)
-sender_thread = threading.Thread(target=sender.start_stream)
-
-# Register the stop_receiver and stop_sender functions to be called at exit
-atexit.register(stop_receiver)
-atexit.register(stop_sender)
-
-receive_thread.start()
-sender_thread.start()
-
-# To keep the script running and allow receiving and sending audio
+# Create UDP socket
 try:
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    client_socket.settimeout(1.0)  # Set timeout for socket operations
+except socket.error as e:
+    print(f"Failed to create socket: {e}")
+    exit()
+
+# Initialize PyAudio
+try:
+    p = pyaudio.PyAudio()
+except Exception as e:
+    print(f"Failed to initialize PyAudio: {e}")
+    exit()
+
+def send_audio():
+    try:
+        stream = p.open(format=FORMAT,
+                        channels=CHANNELS,
+                        rate=RATE,
+                        input=True,
+                        frames_per_buffer=CHUNK)
+    except Exception as e:
+        print(f"Failed to open input stream: {e}")
+        return
+
     while True:
-        time.sleep(1)
-except KeyboardInterrupt:
-    print("Interrupted by user, shutting down.")
+        try:
+            data = stream.read(CHUNK)
+            client_socket.sendto(data, (SERVER_IP, SERVER_PORT))
+        except Exception as e:
+            print(f"Error sending audio data: {e}")
+            break
+
+def receive_audio():
+    try:
+        stream = p.open(format=FORMAT,
+                        channels=CHANNELS,
+                        rate=RATE,
+                        output=True,
+                        frames_per_buffer=CHUNK)
+    except Exception as e:
+        print(f"Failed to open output stream: {e}")
+        return
+
+    print("Connected to the server.")
+
+    while True:
+        try:
+            data, addr = client_socket.recvfrom(1024)
+            stream.write(data)
+        except socket.timeout:
+            continue
+        except Exception as e:
+            print(f"Error receiving audio data: {e}")
+            break
+
+# Connect to the server
+try:
+    client_socket.sendto(b"Connected to the server.", (SERVER_IP, SERVER_PORT))
+
+    send_thread = threading.Thread(target=send_audio)
+    receive_thread = threading.Thread(target=receive_audio)
+
+    send_thread.start()
+    receive_thread.start()
+
+    send_thread.join()
+    receive_thread.join()
+except Exception as e:
+    print(f"Failed to start threads: {e}")
 finally:
-    stop_receiver()
-    stop_sender()
+    client_socket.close()
+    p.terminate()
