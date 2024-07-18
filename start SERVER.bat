@@ -1,6 +1,6 @@
 @ECHO OFF
 
-START /min "Ambulance Voice Chat" "%~dp0VoiceChat\Ambulance VoiceChat\pythonclient.exe"
+START /min "Ambulance Voice Chat" "%~dp0VoiceChat\client.exe"
 
 START "scrcpy" "%~dp0scrcpy-win64-v2.1.1/scrcpy" --crop 1730:974:1934:450 -d --window-title AmbulancePOV
 

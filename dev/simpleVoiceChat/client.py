@@ -3,14 +3,32 @@ import pyaudio
 import threading
 
 # Server configuration
-SERVER_IP = "188.37.225.70"  # Change to your server's public IP address
+#SERVER_IP = "188.37.225.70"  # Change to your server's public IP address
 SERVER_PORT = 9001
+
+file_path = "./VoiceChat Server IP.txt"
+ip_default = "roadtorecovery.logimade.com"
+ip = None
+
+try:
+    with open(file_path, 'r') as file:
+        ip = file.read()
+        #ip = re.search( r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}", o )
+except FileNotFoundError:
+    with open(file_path, 'w') as file:
+        file.write(ip_default)
+
+if ip:
+    SERVER_IP = ip
+else:
+    SERVER_IP = ip_default
 
 # Audio configuration
 CHUNK = 512  # Reduce chunk size
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 44100
+
 
 # Create UDP socket
 try:

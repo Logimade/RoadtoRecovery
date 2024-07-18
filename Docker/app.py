@@ -1,115 +1,59 @@
-from time import sleep
-from threading import Thread, Lock, Condition
-import pickle
 import socket
+import threading
+import time
 
-SOCK_IP = '0.0.0.0'  # internal IP  of the server
-SOCK_PORT = 9001
+# Server configuration
+SERVER_IP = "0.0.0.0"
+SERVER_PORT = 9001
+
+# Dictionary to keep track of connected clients and their last active time
+clients = {}
+
+# Lock for thread-safe access to clients dictionary
+clients_lock = threading.Lock()
+
+# Create UDP socket
+server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+server_socket.bind((SERVER_IP, SERVER_PORT))
+
+print("Server started at {}:{}".format(SERVER_IP, SERVER_PORT))
 
 
-class Client:
-    allClients = []
-    availableClients = {}  # {'client name' : client object}
+# Function to periodically check and remove inactive clients
+def handle_clients():
+    while True:
+        with clients_lock:
+            current_time = time.time()
+            # Identify clients that haven't been active for more than 5 seconds
+            inactive_clients = [client for client, last_active in clients.items() if current_time - last_active > 5]
+            for client in inactive_clients:
+                print(f"Removing inactive client: {client}")
+                del clients[client]
+        time.sleep(1)
 
 
-    def __init__(self, client_ptr):
-        Client.allClients.append(self)
-        self.cl_ptr = client_ptr
-        self.name = None
-        self.name = self.get_name()
-        self.recipient_name = None
-        self.recipient_name = self.get_recipient_name()
-        print(f"received name {self.name} and recipient {self.recipient_name}")
-        Client.availableClients[self.name] = self
-        try:
-            self.lobby()
-        except ConnectionResetError:
-            print("CONNECTION RESET ERROR")
-            self.close()
-        except BrokenPipeError:
-            print("BROKEN PIPE. Closing connection")
-            self.close()
+# Start a background thread to handle inactive clients
+heartbeat_thread = threading.Thread(target=handle_clients)
+heartbeat_thread.daemon = True
+heartbeat_thread.start()
 
-    def lobby(self):
-        cl = None
-        while True:
-            try:
-                cl = Client.availableClients[self.recipient_name]
-                if cl.get_recipient_name() == self.name:
-                    break
-                else:
-                    print("recipient busy.")
-                    sleep(1)
-            except KeyError:
-                print("waiting...")
-                sleep(1)
-                continue
-        if cl is not None:
-            # found a client who wants to connect to self
-            self.cl_ptr[0].send('go'.encode())
-            self.converse(cl)
-        self.close()
-
-    # Enter a loop to keep searching for recipient in available clients
-
-    def get_name(self):
-        if self.name is None:
-            # receive name
-            self.name = self.cl_ptr[0].recv(512).decode().rstrip()
-            print(f"Client connected: {self.name}")
-        return self.name
-
-    def get_recipient_name(self):
-        if self.recipient_name is None:
-            # receive recipient name
-            self.recipient_name = self.cl_ptr[0].recv(512).decode().rstrip()
-            print(f"Client {self.name} wants to connect to {self.recipient_name}")
-        return self.recipient_name
-
-    # def getRecipientSocket(self):
-    #     search list of available clients
-
-    def converse(self, recipient_obj):
-        print("establishing connection...")
-        try:
-            while True:
-                self.send(recipient_obj, self.read())
-        except KeyboardInterrupt:
-            self.close()
-        except OSError:
-            self.close()
-
-    def send(self, cl_object, data):
-        cl_object.cl_ptr[0].send(data)
-
-    def read(self):
-        return self.cl_ptr[0].recv(1024)
-
-    def close(self):
-        try:
-            Client.allClients.remove(self)
-        except ValueError:
-            print("Client does not exist in 'allClients' array")
-        Client.availableClients.pop(self.get_name(), None)
-        self.cl_ptr[0].close()
-        print(f"Client {self.name} removed.")
-
-def main():
-    serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    print(f"binding socket on {SOCK_IP}:{SOCK_PORT}")
-    serversocket.bind((SOCK_IP, SOCK_PORT))
-    serversocket.listen(3)
-
+try:
     while True:
         try:
-            client_id = (serversocket.accept(),)
-            thrd1 = Thread(target=client_handler, args=client_id)
-            thrd1.start()
-        except KeyboardInterrupt:
-            serversocket.close()
-            break
+            # Receive data from a client
+            data, client_address = server_socket.recvfrom(1024)
 
-def client_handler(clientid):
-    Client(clientid)
+            # Update the last active time for the client or add a new client
+            with clients_lock:
+                clients[client_address] = time.time()
 
-main()
+                # Forward the data to all clients except the sender
+                for client in list(clients.keys()):
+                    if client != client_address:
+                        server_socket.sendto(data, client)
+        except Exception as e:
+            print(f"Server error: {e}")
+except KeyboardInterrupt:
+    print("Server shutting down...")
+finally:
+    server_socket.close()

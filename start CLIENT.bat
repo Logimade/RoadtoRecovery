@@ -1,6 +1,6 @@
 @ECHO OFF
 
-START /min "Medic Voice Chat" "%~dp0VoiceChat\Medic VoiceChat\pythonclient.exe"
+START /min "Medic Voice Chat" "%~dp0VoiceChat\client.exe"
 
 START /W "VNC Client" "%~dp0VNC Client App\R2R Medic.exe"
 
