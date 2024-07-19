@@ -7,7 +7,7 @@ import threading
 SERVER_PORT = 9001
 
 file_path = "./VoiceChat Server IP.txt"
-ip_default = "89.109.116.102"
+ip_default = "roadtorecovery.logimade.com"
 ip = None
 
 try:
