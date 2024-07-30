@@ -58,11 +58,11 @@ def send_audio():
 
     while True:
         try:
-            data = stream.read(CHUNK)
+            data = stream.read(CHUNK, exception_on_overflow=False)
             client_socket.sendto(data, (SERVER_IP, SERVER_PORT))
         except Exception as e:
             print(f"Error sending audio data: {e}")
-            break
+            continue
 
 def receive_audio():
     try:
