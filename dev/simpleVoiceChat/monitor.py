@@ -34,7 +34,7 @@ def get_network_usage(interval=1):
 
 # Example usage
 if __name__ == "__main__":
-    interval = 0.5  # Measure every 1 second
+    interval = 1  # Measure every 1 second
     while True:
         upload_rate, download_rate = get_network_usage(interval)
         print(f"Upload rate: {upload_rate / 1024:.2f} KB/s, Download rate: {download_rate / 1024:.2f} KB/s")
