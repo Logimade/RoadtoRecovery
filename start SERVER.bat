@@ -1,5 +1,6 @@
 @ECHO OFF
 
+
 START /min "Network Monitor" "%~dp0monitor.exe"
 
 START /min "Ambulance Voice Chat" "%~dp0VoiceChat\client.exe"
@@ -8,9 +9,16 @@ START "scrcpy" "%~dp0scrcpy-win64-v2.1.1/scrcpy" --crop 1730:974:1934:450 -d --w
 
 START "VNC Server" "%~dp0VNC Server App\R2R Ambulance.exe"
 
-TIMEOUT /T 1 /NOBREAK
+TIMEOUT /T 5 /NOBREAK
 
 setlocal
+
+rem Define the process name and window title
+set "processName=monitor"
+set "windowTitle=Network Monitor"
+
+rem Execute the PowerShell script to minimize the window
+powershell -ExecutionPolicy Bypass -File "HideWindow.ps1" -ProcessName "%processName%" -WindowTitle "%windowTitle%"
 
 rem Define the process name and window title
 set "processName=basicServer"

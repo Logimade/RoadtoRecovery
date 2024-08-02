@@ -1,6 +1,28 @@
+import atexit
+import signal
+import sys
+
 import psutil
 import time
 import requests
+
+import tkinter as tk
+from threading import Thread, Event
+
+loop = True
+data_dict = {}
+interval = 1
+server_url = 'https://tidycity.logimade.pt/server/api/road-to-recovery/network/upload-metrics/'  # Replace with your server URL
+
+
+def on_closing():
+    print('Window is closing...')
+    global loop
+    loop = False
+    network_thread.join()  # Ensure the network monitoring thread has stopped
+    print("\nSending data to server...")
+    send_data_to_server(data_dict, server_url)
+    root.destroy()
 
 def get_network_usage(interval=1):
     """
@@ -32,6 +54,7 @@ def get_network_usage(interval=1):
         print(f"An error occurred: {e}")
         return 0.0, 0.0
 
+
 def send_data_to_server(data, url):
     """
     Sends data to the specified server URL via HTTP POST.
@@ -47,24 +70,48 @@ def send_data_to_server(data, url):
     except requests.RequestException as e:
         print(f"Failed to send data: {e}")
 
+
+def update_labels(upload_rate, download_rate):
+    upload_label.config(text=f"Upload rate: {upload_rate:.2f} Mbps")
+    download_label.config(text=f"Download rate: {download_rate:.2f} Mbps")
+
+def network_monitor():
+    while loop:
+        upload_rate, download_rate = get_network_usage(interval)
+        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+        data_dict[timestamp] = {
+            'upload_rate': round(upload_rate / 1024 / 1024 * 8, 2),       # Convert to KB/s, convert to MB/s, and Mbps
+            'download_rate': round(download_rate / 1024 / 1024 * 8, 2)    # Convert to KB/s, convert to MB/s, and Mbps
+        }
+        #print(f"Upload rate: {upload_rate / 1024:.2f} KB/s, Download rate: {download_rate / 1024:.2f} KB/s")
+        #print(f"Upload rate: {upload_rate / 1024 / 1024 * 8 :.2f} Mbps, Download rate: {download_rate / 1024 / 1024 * 8:.2f} Mbps")
+        #print(data_dict)
+
+        if loop:
+            update_labels(data_dict[timestamp]['upload_rate'], data_dict[timestamp]['download_rate'])
+
+
 if __name__ == "__main__":
-    data_dict = {}
-    interval = 1
-    server_url = 'https://tidycity.logimade.pt/server/api/road-to-recovery/network/upload-metrics/'  # Replace with your server URL
+    # Create the main window
+    root = tk.Tk()
+    root.title("Network Monitor")
 
+    # Set the window size
+    root.geometry("300x200")
 
-    try:
-        while True:
-            upload_rate, download_rate = get_network_usage(interval)
-            timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-            data_dict[timestamp] = {
-                'upload_rate': round(upload_rate / 1024 / 1024 * 8, 2),       # Convert to KB/s, convert to MB/s, and Mbps
-                'download_rate': round(download_rate / 1024 / 1024 * 8, 2)    # Convert to KB/s, convert to MB/s, and Mbps
-            }
-            #print(f"Upload rate: {upload_rate / 1024:.2f} KB/s, Download rate: {download_rate / 1024:.2f} KB/s")
-            print(f"Upload rate: {upload_rate / 1024 / 1024 * 8 :.2f} Mbps, Download rate: {download_rate / 1024 / 1024 * 8:.2f} Mbps")
+    # Create labels for upload and download rates
+    upload_label = tk.Label(root, text="Upload rate: 0.00 Mbps")
+    upload_label.pack(pady=10)
 
-            print(data_dict)
-    except KeyboardInterrupt:
-        print("\nProgram terminated by user.")
-        send_data_to_server(data_dict, server_url)  # Send data to the server only upon termination
+    download_label = tk.Label(root, text="Download rate: 0.00 Mbps")
+    download_label.pack(pady=10)
+
+    # Bind the window close event to the on_closing function
+    root.protocol("WM_DELETE_WINDOW", on_closing)
+
+    # Start the network monitoring in a separate thread
+    network_thread = Thread(target=network_monitor)
+    network_thread.start()
+
+    # Run the application
+    root.mainloop()
