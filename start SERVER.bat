@@ -1,5 +1,7 @@
 @ECHO OFF
 
+START /min "Network Monitor" "%~dp0monitor.exe"
+
 START /min "Ambulance Voice Chat" "%~dp0VoiceChat\client.exe"
 
 START "scrcpy" "%~dp0scrcpy-win64-v2.1.1/scrcpy" --crop 1730:974:1934:450 -d --window-title AmbulancePOV
@@ -38,6 +40,7 @@ if "%ERRORLEVEL%"=="0" (
 :endlocal
 
 REM Once PowerShell script is executed and scrcpy window is closed, close the remaining windows
+taskkill /FI "WINDOWTITLE eq Network Monitor"
 taskkill /FI "WINDOWTITLE eq Ambulance Voice Chat"
 taskkill /FI "WINDOWTITLE eq VNC Server"
 

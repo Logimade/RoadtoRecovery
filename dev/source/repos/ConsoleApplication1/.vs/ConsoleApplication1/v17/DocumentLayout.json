@@ -3,10 +3,10 @@
   "WorkspaceRootPath": "C:\\Users\\HCI4H\\Documents\\GitHub\\RoadtoRecovery\\dev\\source\\repos\\ConsoleApplication1\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{31664308-1704-4D59-9DDB-A44C89D371EB}|ConsoleApplication1\\ConsoleApplication1.vcxproj|C:\\Users\\HCI4H\\Documents\\GitHub\\RoadtoRecovery\\dev\\vnc app\\samples\\basicViewerWin\\BasicViewerWindow.cxx||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+      "AbsoluteMoniker": "D:0:0:{31664308-1704-4D59-9DDB-A44C89D371EB}|ConsoleApplication1\\ConsoleApplication1.vcxproj|C:\\Users\\HCI4H\\Documents\\GitHub\\RoadtoRecovery\\dev\\vnc app\\samples\\basicViewerWin\\main.cxx||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{31664308-1704-4D59-9DDB-A44C89D371EB}|ConsoleApplication1\\ConsoleApplication1.vcxproj|C:\\Users\\HCI4H\\Documents\\GitHub\\RoadtoRecovery\\dev\\vnc app\\samples\\basicViewerWin\\main.cxx||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+      "AbsoluteMoniker": "D:0:0:{31664308-1704-4D59-9DDB-A44C89D371EB}|ConsoleApplication1\\ConsoleApplication1.vcxproj|C:\\Users\\HCI4H\\Documents\\GitHub\\RoadtoRecovery\\dev\\vnc app\\samples\\basicViewerWin\\BasicViewerWindow.cxx||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     }
   ],
   "DocumentGroupContainers": [
@@ -16,30 +16,30 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 1,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "BasicViewerWindow.cxx",
               "DocumentMoniker": "C:\\Users\\HCI4H\\Documents\\GitHub\\RoadtoRecovery\\dev\\vnc app\\samples\\basicViewerWin\\BasicViewerWindow.cxx",
               "RelativeDocumentMoniker": "..\\..\\..\\vnc app\\samples\\basicViewerWin\\BasicViewerWindow.cxx",
               "ToolTip": "C:\\Users\\HCI4H\\Documents\\GitHub\\RoadtoRecovery\\dev\\vnc app\\samples\\basicViewerWin\\BasicViewerWindow.cxx",
               "RelativeToolTip": "..\\..\\..\\vnc app\\samples\\basicViewerWin\\BasicViewerWindow.cxx",
-              "ViewState": "AQIAACABAAAAAAAAAAAAAEoBAAAFAAAA",
+              "ViewState": "AQIAAOEAAAAAAAAAAAAAAEoBAAAFAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2024-06-11T15:12:12.957Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 0,
               "Title": "main.cxx",
               "DocumentMoniker": "C:\\Users\\HCI4H\\Documents\\GitHub\\RoadtoRecovery\\dev\\vnc app\\samples\\basicViewerWin\\main.cxx",
               "RelativeDocumentMoniker": "..\\..\\..\\vnc app\\samples\\basicViewerWin\\main.cxx",
               "ToolTip": "C:\\Users\\HCI4H\\Documents\\GitHub\\RoadtoRecovery\\dev\\vnc app\\samples\\basicViewerWin\\main.cxx",
               "RelativeToolTip": "..\\..\\..\\vnc app\\samples\\basicViewerWin\\main.cxx",
-              "ViewState": "AQIAAHEBAAAAAAAAAAAAAB8AAAASAAAA",
+              "ViewState": "AQIAADcCAAAAAAAAAAAAAEUCAABzAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2024-06-11T14:36:04.925Z",
               "EditorCaption": ""

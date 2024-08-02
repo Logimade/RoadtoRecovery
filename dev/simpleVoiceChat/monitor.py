@@ -1,6 +1,5 @@
 import psutil
 import time
-import json
 import requests
 
 def get_network_usage(interval=1):
@@ -51,17 +50,20 @@ def send_data_to_server(data, url):
 if __name__ == "__main__":
     data_dict = {}
     interval = 1
-    server_url = 'http://yourserver.com/endpoint'  # Replace with your server URL
+    server_url = 'https://tidycity.logimade.pt/server/api/road-to-recovery/network/upload-metrics/'  # Replace with your server URL
+
 
     try:
         while True:
             upload_rate, download_rate = get_network_usage(interval)
             timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
             data_dict[timestamp] = {
-                'upload_rate': upload_rate / 1024,  # Convert to KB/s
-                'download_rate': download_rate / 1024  # Convert to KB/s
+                'upload_rate': round(upload_rate / 1024 / 1024 * 8, 2),       # Convert to KB/s, convert to MB/s, and Mbps
+                'download_rate': round(download_rate / 1024 / 1024 * 8, 2)    # Convert to KB/s, convert to MB/s, and Mbps
             }
-            print(f"Upload rate: {upload_rate / 1024:.2f} KB/s, Download rate: {download_rate / 1024:.2f} KB/s")
+            #print(f"Upload rate: {upload_rate / 1024:.2f} KB/s, Download rate: {download_rate / 1024:.2f} KB/s")
+            print(f"Upload rate: {upload_rate / 1024 / 1024 * 8 :.2f} Mbps, Download rate: {download_rate / 1024 / 1024 * 8:.2f} Mbps")
+
             print(data_dict)
     except KeyboardInterrupt:
         print("\nProgram terminated by user.")
