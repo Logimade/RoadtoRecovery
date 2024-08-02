@@ -13,6 +13,7 @@ TIMEOUT /T 5 /NOBREAK
 
 setlocal
 
+
 rem Define the process name and window title
 set "processName=monitor"
 set "windowTitle=Network Monitor"
@@ -20,8 +21,9 @@ set "windowTitle=Network Monitor"
 rem Execute the PowerShell script to minimize the window
 powershell -ExecutionPolicy Bypass -File "HideWindow.ps1" -ProcessName "%processName%" -WindowTitle "%windowTitle%"
 
+
 rem Define the process name and window title
-set "processName=basicServer"
+set "processName=R2R Ambulance"
 set "windowTitle=My Window"
 
 rem Execute the PowerShell script to minimize the window
