@@ -11,12 +11,10 @@ dev/vnc app/samples/basicServer/out/
 dev/vnc app/samples/basicViewerWin/.vs/
 dev/vnc app/samples/basicViewerWin/out/
 
-dev/VoiceChat/dist/
-dev/VoiceChat/build/
-dev/VoiceChat/pythonclient.spec
-
 dev/source/repos/ConsoleApplication1/.vs/
 /dev/simpleVoiceChat/.idea
+/dev/simpleVoiceChat/build
+
 
 NetworkLogs/
 

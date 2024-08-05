@@ -25,6 +25,7 @@ def on_closing():
     os.makedirs(os.path.dirname(os.path.join(os.getcwd(), 'NetworkLogs/')), exist_ok=True)
     file_name = f"metrics_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.json"
 
+
     # Define the file path
     file_path = os.path.join(os.getcwd(), 'NetworkLogs', file_name)
 
