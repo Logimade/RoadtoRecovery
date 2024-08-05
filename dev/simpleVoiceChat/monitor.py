@@ -1,13 +1,12 @@
-import atexit
-import signal
-import sys
+import json
+import os
+import time
+import tkinter as tk
+from datetime import datetime
+from threading import Thread
 
 import psutil
-import time
 import requests
-
-import tkinter as tk
-from threading import Thread, Event
 
 loop = True
 data_dict = {}
@@ -22,7 +21,19 @@ def on_closing():
     network_thread.join()  # Ensure the network monitoring thread has stopped
     print("\nSending data to server...")
     send_data_to_server(data_dict, server_url)
+
+    os.makedirs(os.path.dirname(os.path.join(os.getcwd(), 'NetworkLogs/')), exist_ok=True)
+    file_name = f"metrics_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.json"
+
+    # Define the file path
+    file_path = os.path.join(os.getcwd(), 'NetworkLogs', file_name)
+
+    # Write the received data to the JSON file
+    with open(file_path, 'w') as file:
+        json.dump(data_dict, file, indent=4)
+
     root.destroy()
+
 
 def get_network_usage(interval=1):
     """
@@ -75,17 +86,18 @@ def update_labels(upload_rate, download_rate):
     upload_label.config(text=f"Upload rate: {upload_rate:.2f} Mbps")
     download_label.config(text=f"Download rate: {download_rate:.2f} Mbps")
 
+
 def network_monitor():
     while loop:
         upload_rate, download_rate = get_network_usage(interval)
         timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
         data_dict[timestamp] = {
-            'upload_rate': round(upload_rate / 1024 / 1024 * 8, 2),       # Convert to KB/s, convert to MB/s, and Mbps
-            'download_rate': round(download_rate / 1024 / 1024 * 8, 2)    # Convert to KB/s, convert to MB/s, and Mbps
+            'upload_rate': round(upload_rate / 1024 / 1024 * 8, 2),  # Convert to KB/s, convert to MB/s, and Mbps
+            'download_rate': round(download_rate / 1024 / 1024 * 8, 2)  # Convert to KB/s, convert to MB/s, and Mbps
         }
-        #print(f"Upload rate: {upload_rate / 1024:.2f} KB/s, Download rate: {download_rate / 1024:.2f} KB/s")
-        #print(f"Upload rate: {upload_rate / 1024 / 1024 * 8 :.2f} Mbps, Download rate: {download_rate / 1024 / 1024 * 8:.2f} Mbps")
-        #print(data_dict)
+        # print(f"Upload rate: {upload_rate / 1024:.2f} KB/s, Download rate: {download_rate / 1024:.2f} KB/s")
+        # print(f"Upload rate: {upload_rate / 1024 / 1024 * 8 :.2f} Mbps, Download rate: {download_rate / 1024 / 1024 * 8:.2f} Mbps")
+        # print(data_dict)
 
         if loop:
             update_labels(data_dict[timestamp]['upload_rate'], data_dict[timestamp]['download_rate'])
