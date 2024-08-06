@@ -8,12 +8,15 @@ The following diagram represents the system architecture followed throughout the
 
 ## Main Modules
 The following diagrams represents the main modules that were used by the system:
-- **AR App**
-- The AR app manages all data associated with the VR glasses and is developed using Unity software. Acting as a server, it utilizes TCP sockets for communication. These sockets transmit information about the patient's status, including temperature, blood pressure, and oxygen levels. They also convey the medical procedures that paramedics need to follow. This data is then presented as a Head-Up Display (HUD) on the VR goggles.
+- **AR app** ![AR app](docs/ar_app.png)
+  - The AR app manages all data associated with the VR glasses and is developed using Unity software. Acting as a server, it utilizes TCP sockets for communication. These sockets transmit information about the patient's status, including temperature, blood pressure, and oxygen levels. They also convey the medical procedures that paramedics need to follow. This data is then presented as a Head-Up Display (HUD) on the VR goggles.
 The VR goggles used for this project are the Meta Quest Pro.
-- ![AR App](docs/ar_app.png)
-- **Remote App (Ambulance)** ![Remote App (Ambulance)](docs/remote_app_ambulance.png)
-- **Remote App (Hospital)** ![Remote App (Hospital)](docs/remote_app_hospital.png)
+
+- **Remote app (Ambulance)** ![Remote app (Ambulance)](docs/remote_app_ambulance.png)
+  - The Remote App (Ambulance) serves as the primary server for most components, handling data transmission to the AR device and facilitating two-way communication with the hospital. Developed in C, it incorporates a VNC server as the core component for communications between the ambulance and the hospital. Additionally, the app features a UDP Voice Chat, hosted on Logimade servers, which is designed to be resilient to errors and connection issues. The Remote App (Ambulance) serves as the primary server for most components, handling data transmission to the AR device and facilitating two-way communication with the hospital. Developed in C, it incorporates a VNC server as the core component for communications between the ambulance and the hospital. Additionally, the app features a UDP Voice Chat, hosted on Logimade servers, which is designed to be resilient to errors and connection issues. To display passthrough information on the laptop, the scrcpy software is utilized. Due to Meta's strict policies on sharing this type of information, we use this mirroring software to securely access the data.
+
+- **Remote app (Hospital)** ![Remote app (Hospital)](docs/remote_app_hospital.png)
+  - The Remote App (Hospital) acts as the client in the system, enabling the doctor to monitor the patient's status and the overall situation in the ambulance. Also developed in C, it incorporates a VNC client as the main component for connecting to the ambulance. Additionally, this application connects to the Voice Chat server on the Logimade host using UDP transmission. 
 
 ## Features
 
