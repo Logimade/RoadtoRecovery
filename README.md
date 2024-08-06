@@ -8,7 +8,10 @@ The following diagram represents the system architecture followed throughout the
 
 ## Main Modules
 The following diagrams represents the main modules that were used by the system:
-- **AR App** ![AR App](docs/ar_app.png)
+- **AR App**
+- The AR app manages all data associated with the VR glasses and is developed using Unity software. Acting as a server, it utilizes TCP sockets for communication. These sockets transmit information about the patient's status, including temperature, blood pressure, and oxygen levels. They also convey the medical procedures that paramedics need to follow. This data is then presented as a Head-Up Display (HUD) on the VR goggles.
+The VR goggles used for this project are the Meta Quest Pro.
+- ![AR App](docs/ar_app.png)
 - **Remote App (Ambulance)** ![Remote App (Ambulance)](docs/remote_app_ambulance.png)
 - **Remote App (Hospital)** ![Remote App (Hospital)](docs/remote_app_hospital.png)
 
