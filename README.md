@@ -2,6 +2,11 @@
 
 Road to Recovery is a project designed to facilitate seamless video and audio transmission between a Medic located at a hospital and a Paramedic in an ambulance. The Paramedic wears a VR headset with passthrough enabled, which is mirrored onto a laptop using `scrcpy` and then transmitted over VNC to the Medic. This allows the Medic to see the live feed and guide the Paramedic through necessary medical procedures.
 
+## System Architecture
+The following diagram represents the system architecture followed throughout the project:
+![Road to Recovery](docs/r2r_system_diagram.png)
+
+
 ## Features
 
 - **Real-time Video and Audio Transmission:** Live video feed from the Paramedic’s VR headset to the Medic.
