@@ -6,6 +6,10 @@ Road to Recovery is a project designed to facilitate seamless video and audio tr
 The following diagram represents the system architecture followed throughout the project:
 ![Road to Recovery](docs/r2r_system_diagram.png)
 
+## Main Modules
+- **AR App** ![AR App](docs/ar_app.png)
+- **Remote App (Ambulance)** ![Remote App (Ambulance)](docs/remote_app_(ambulance).png)
+- **Remote App (Hospital)** ![Remote App (Hospital)](docs/remote_app_(hospital).png)
 
 ## Features
 
