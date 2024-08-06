@@ -7,9 +7,10 @@ The following diagram represents the system architecture followed throughout the
 ![Road to Recovery](docs/r2r_system_diagram.png)
 
 ## Main Modules
+The following diagrams represents the main modules that were used by the system:
 - **AR App** ![AR App](docs/ar_app.png)
-- **Remote App (Ambulance)** ![Remote App (Ambulance)](docs/remote_app_(ambulance).png)
-- **Remote App (Hospital)** ![Remote App (Hospital)](docs/remote_app_(hospital).png)
+- **Remote App (Ambulance)** ![Remote App (Ambulance)](docs/remote_app_ambulance.png)
+- **Remote App (Hospital)** ![Remote App (Hospital)](docs/remote_app_hospital.png)
 
 ## Features
 
@@ -35,21 +36,21 @@ The following diagram represents the system architecture followed throughout the
 
 ### Paramedic Side
 
-1. ** Clone the repository**:
-  - The main components needed are:
-    - VNC Server App
-    - scrcpy
-    - VoiceChat
-    - start SERVER.bat
+1. **Clone the repository**:
+    - The main components needed are:
+        - VNC Server App
+        - scrcpy
+        - VoiceChat
+        - start SERVER.bat
 
 
 ### Medic Side (Hospital)
 
-1. ** Clone the repository**:
- - The main components needed are:
-    - VNC Client App
-    - VoiceChat
-    - start CLIENT.bat
+1. **Clone the repository**:
+    - The main components needed are:
+        - VNC Client App
+        - VoiceChat
+        - start CLIENT.bat
 
 ## Usage
 
