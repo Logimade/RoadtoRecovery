@@ -27,7 +27,7 @@ Road to Recovery is a project designed to facilitate seamless video and audio tr
 ### Paramedic Side
 
 1. ** Clone the repository**:
-  - Mainly the following directories/files:
+  - The main components needed are:
     - VNC Server App
     - scrcpy
     - VoiceChat
@@ -37,8 +37,8 @@ Road to Recovery is a project designed to facilitate seamless video and audio tr
 ### Medic Side (Hospital)
 
 1. ** Clone the repository**:
- - Mainly the following directories/files:
-      - VNC Client App
+ - The main components needed are:
+    - VNC Client App
     - VoiceChat
     - start CLIENT.bat
 
@@ -46,6 +46,9 @@ Road to Recovery is a project designed to facilitate seamless video and audio tr
 
 1. **Medic**:
    - Run the 'start CLIENT.bat' file.
+
+2. **Paramedic**:
+   - Run the 'start SERVER.bat' file.
 
 ## Troubleshooting
 
